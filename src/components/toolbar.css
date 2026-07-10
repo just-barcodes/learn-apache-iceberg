@@ -21,6 +21,7 @@
 }
 
 .action {
+  --act: var(--data-line);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -31,13 +32,254 @@
   color: var(--text);
   cursor: pointer;
   font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 700;
   text-align: left;
   transition: all 0.15s;
 }
 .action:hover {
-  border-color: var(--border-strong);
+  border-color: var(--act);
+  background: color-mix(in srgb, var(--act) 8%, var(--card-bg));
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--act) 20%, transparent);
+}
+.action--evolve {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 7px 13px;
+}
+
+.action__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.action__dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 3px;
+  background: var(--act);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--act) 18%, transparent);
+}
+.action__label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.action__title {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.action__desc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* ---- append control ---- */
+
+.append {
+  --act: var(--data-line);
+  display: flex;
+  align-items: stretch;
+  border: 1.5px solid var(--border-field);
+  border-radius: 10px;
+  background: var(--card-bg);
+  overflow: hidden;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.append:hover {
+  border-color: var(--act);
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--act) 20%, transparent);
+}
+.append__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 13px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s;
+}
+.append__main:hover {
+  background: color-mix(in srgb, var(--act) 8%, var(--card-bg));
+}
+.append__count {
+  font-family: var(--font-mono);
+}
+.append__stepper {
+  display: flex;
+  flex-direction: column;
+  border-left: 1.5px solid var(--border-field);
+  background: var(--input-bg-soft);
+  width: 60px;
+}
+.append__input {
+  width: 100%;
+  flex: 1;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  padding: 2px 0;
+  outline: none;
+}
+.append__step-btns {
+  display: flex;
+  flex: 1;
+  border-top: 1px solid var(--border-soft);
+}
+.append__step {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--data-bd);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.append__step:hover {
+  background: color-mix(in srgb, var(--data-line) 14%, var(--input-bg-soft));
+}
+.append__step-divider {
+  width: 1px;
+  background: var(--border-soft);
+}
+
+/* ---- partition evolve pill ---- */
+
+.action--evolve {
+  --act: var(--meta-line);
+}
+.spec-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--meta-line);
+  background: var(--meta-bg);
+  border: 1px solid var(--meta-bd);
+  border-radius: 7px;
+  padding: 2px 8px;
+}
+.spec-pill__tag {
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ---- query planner ---- */
+
+.query {
+  --act: var(--meta-line);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1.5px solid var(--border-field);
+  border-radius: 10px;
+  background: var(--card-bg);
+  padding: 7px 13px;
+  flex-wrap: wrap;
+}
+.query__divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-soft);
+}
+.query__clause {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.query__select,
+.query__input {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--text);
+  border: 1.5px solid var(--border-field);
+  border-radius: 7px;
+  padding: 4px 6px;
+  background: var(--input-bg);
+  outline: none;
+}
+.query__select {
+  cursor: pointer;
+}
+.query__input {
+  width: 74px;
+  font-weight: 600;
+  padding: 4px 7px;
+}
+.query__eq {
+  font-weight: 700;
+  color: var(--text);
+}
+.query__run {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1.5px solid var(--meta-line);
+  background: var(--meta-line);
+  color: #fff;
+  cursor: pointer;
+  transition: box-shadow 0.12s;
+}
+.query__run:disabled {
+  border-color: var(--border-field);
+  background: var(--segment-bg);
+  color: var(--text-faint);
+  cursor: default;
+}
+.query__clear {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 11px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-field);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.query__result {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 11px;
+  background: var(--meta-bg);
+  border: 1px solid var(--meta-bd);
+  border-radius: 8px;
+  font-size: 10.5px;
+  color: var(--text-strong);
+}
+.query__result-scan {
+  font-family: var(--font-mono);
+  color: var(--meta-line);
+  font-size: 12.5px;
+}
+.query__result-pruned {
+  color: var(--snapshot-line);
 }
 
 /* ---- view badge ---- */
