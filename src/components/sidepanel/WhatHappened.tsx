@@ -1,13 +1,5 @@
-import type { LastStep, Operation } from "../../domain/types";
-
-/** CSS variable holding the accent color for each operation. */
-const ACCENT_VAR: Record<Operation, string> = {
-  append: "var(--data-line)",
-  delete: "var(--delete-line)",
-  compaction: "var(--manifest-line)",
-  expire: "var(--accent-gray)",
-  evolve: "var(--meta-line)",
-};
+import type { LastStep } from "../../domain/types";
+import { ACCENT_VAR } from "../../viewmodel/panels";
 
 interface Props {
   lastStep: LastStep;

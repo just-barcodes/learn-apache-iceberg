@@ -71,3 +71,116 @@
   font-weight: 700;
   flex: none;
 }
+
+/* ---- stat grid ---- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat {
+  background: var(--card-bg);
+  border: 1px solid var(--border-field);
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+.stat__value {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.stat__label {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+/* ---- generic panel card (legend, commit log) ---- */
+
+.panel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-field);
+  border-radius: 11px;
+  padding: 12px 13px;
+}
+.panel-card--grow {
+  flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+.panel-card__head {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 9px;
+}
+
+/* ---- legend ---- */
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.legend__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.legend__swatch {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  border-radius: 4px;
+  background: var(--node-bg);
+  border: 1.5px solid var(--node-bd);
+}
+.legend__swatch--pointer {
+  height: 6px;
+  border: none;
+  border-top: 2px dashed var(--snapshot-line);
+  border-radius: 0;
+  background: transparent;
+}
+.legend__text {
+  font-size: 11px;
+  color: var(--text-strong);
+}
+.legend__text b {
+  font-weight: 600;
+}
+
+/* ---- commit log ---- */
+
+.commit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+.commit-log__row {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.commit-log__badge {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 5px;
+  padding: 2px 6px;
+  flex: none;
+  margin-top: 1px;
+}
+.commit-log__text {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-strong);
+}
