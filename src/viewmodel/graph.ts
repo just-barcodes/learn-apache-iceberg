@@ -46,6 +46,8 @@ export function buildGraph(state: TableState): GraphModel {
   const curMetaV = metaVForSnap(state, state.current);
   const maxV = Math.max(...state.metas.map((m) => m.v));
   const prunedIds = prunedSet(state);
+  // Simple drops the tertiary mono "plumbing" notes (file paths / pointers) on cards.
+  const simple = state.level === "simple";
 
   const tableNode: GraphNodeVM = {
     id: "table",
@@ -54,7 +56,7 @@ export function buildGraph(state: TableState): GraphModel {
     tag: "preview",
     name: "orders",
     sub: "iceberg table",
-    note: "catalog → current metadata",
+    note: simple ? null : "catalog → current metadata",
     action: { type: "openInspect", kind: "table", id: null },
   };
 
@@ -78,7 +80,7 @@ export function buildGraph(state: TableState): GraphModel {
       pill: "SNAP",
       name: s.id,
       sub: s.op + " · " + s.ts,
-      note: "manifest-list-" + s.id + ".avro",
+      note: simple ? null : "manifest-list-" + s.id + ".avro",
       tag: current ? "CURRENT" : "seq " + s.seq,
       // Keep the hint while the selected snapshot's inspector is open so the card
       // does not resize when the modal opens.
@@ -136,7 +138,7 @@ export function buildGraph(state: TableState): GraphModel {
         pill: "DELETE",
         name: f.id + ".parquet",
         sub: "deletes " + f.deletedIds.length + " rows",
-        note: "→ " + f.targets.join(", "),
+        note: simple ? null : "→ " + f.targets.join(", "),
         tag: "MoR",
         inactive: !ref.xfs.has(f.id),
         action: { type: "openInspect", kind: "delete", id: f.id },

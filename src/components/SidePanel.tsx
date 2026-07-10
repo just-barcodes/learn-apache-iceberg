@@ -12,7 +12,7 @@ interface Props {
 export function SidePanel({ state }: Props) {
   return (
     <aside className="sidepanel">
-      <WhatHappened lastStep={state.lastStep} />
+      <WhatHappened lastStep={state.lastStep} level={state.level} />
       <StatGrid state={state} />
       <Legend />
       <CommitLog log={state.log} />
