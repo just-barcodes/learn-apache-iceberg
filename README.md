@@ -9,6 +9,19 @@ time-travel. Supports light and dark mode.
 Reimplemented from scratch (React + TypeScript + Vite) from the Claude Design
 project **Apache Iceberg Visualization Tool**.
 
+## Detail levels
+
+A header control tiers the interface by how much of the Iceberg model it reveals,
+so each level teaches one layer:
+
+- **Simple** — the core mental model: Catalog → Snapshot → Data files, with just
+  Append/Delete and the essential counts. The metadata/manifest layers, raw
+  files, and plumbing notes are hidden.
+- **Medium** — reveals how the pointer is stored: the metadata and manifest
+  columns, Compact/Expire, and more panel detail.
+- **Advanced** — the physical/optimization layer: the query planner, partition
+  evolution, per-column min/max stats, and raw metadata/Avro JSON.
+
 ## Getting started
 
 ```sh
