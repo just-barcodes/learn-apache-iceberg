@@ -7,8 +7,7 @@ and data files rewire. Click any node to inspect it; click a snapshot to
 time-travel. Supports light and dark mode.
 
 Reimplemented from scratch (React + TypeScript + Vite) from the Claude Design
-project **Apache Iceberg Visualization Tool**. The original Design Composer
-mockup is preserved under [`_legacy/`](./_legacy).
+project **Apache Iceberg Visualization Tool**.
 
 ## Getting started
 

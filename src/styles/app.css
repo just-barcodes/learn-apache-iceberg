@@ -15,6 +15,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Applied for one frame while the theme flips so nothing animates its color change. */
+:root.theme-no-transition,
+:root.theme-no-transition * {
+  transition: none !important;
+}
+
 a {
   color: var(--link);
   text-decoration: none;

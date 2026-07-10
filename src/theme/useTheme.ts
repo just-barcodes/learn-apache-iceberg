@@ -34,7 +34,13 @@ export function useTheme() {
   const resolved: ResolvedTheme = pref === "system" ? system : pref;
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", resolved);
+    // Disable transitions for the frame the theme flips, so token-driven colors
+    // (button backgrounds/borders) switch instantly instead of animating.
+    const root = document.documentElement;
+    root.classList.add("theme-no-transition");
+    root.setAttribute("data-theme", resolved);
+    const raf = requestAnimationFrame(() => root.classList.remove("theme-no-transition"));
+    return () => cancelAnimationFrame(raf);
   }, [resolved]);
 
   useEffect(() => {

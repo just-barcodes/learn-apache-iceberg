@@ -45,7 +45,6 @@ export function buildGraph(state: TableState): GraphModel {
   const selMetaV = metaVForSnap(state, state.selected);
   const curMetaV = metaVForSnap(state, state.current);
   const maxV = Math.max(...state.metas.map((m) => m.v));
-  const inspectingSnap = state.inspect?.kind === "snapshot";
   const prunedIds = prunedSet(state);
 
   const tableNode: GraphNodeVM = {
@@ -81,7 +80,9 @@ export function buildGraph(state: TableState): GraphModel {
       sub: s.op + " · " + s.ts,
       note: "manifest-list-" + s.id + ".avro",
       tag: current ? "CURRENT" : "seq " + s.seq,
-      hint: isSel && !(inspectingSnap && state.inspect?.id === s.id) ? "click again for details" : null,
+      // Keep the hint while the selected snapshot's inspector is open so the card
+      // does not resize when the modal opens.
+      hint: isSel ? "click again for details" : null,
       inactive: !(isSel || current),
       current,
       action: isSel
