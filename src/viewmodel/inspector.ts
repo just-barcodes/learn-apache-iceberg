@@ -97,6 +97,9 @@ function gridRows(records: OrderRecord[], deletedSet: Set<number> | null): GridR
 export function buildInspector(state: TableState): InspectorModel {
   if (!state.inspect) return { open: false };
   const { kind, id } = state.inspect;
+  // Column min/max are pruning stats, only meaningful alongside the query planner,
+  // so they are shown at the advanced detail level only.
+  const showStats = state.level === "advanced";
 
   if (kind === "table") {
     const { live, deleted } = liveRecords(state, state.selected);
@@ -324,7 +327,7 @@ export function buildInspector(state: TableState): InspectorModel {
           rows: dd.records.length + " rows",
           size: dd.size + " MB",
           extra: "",
-          bounds: formatBounds(dd.bounds),
+          bounds: showStats ? formatBounds(dd.bounds) : null,
         };
       })
       .filter((e): e is ManifestEntry => e !== null);
@@ -412,14 +415,15 @@ export function buildInspector(state: TableState): InspectorModel {
       rows: gridRows(f.records, null),
       caption:
         "Raw contents of this immutable data file. Deletes are never applied inside the file; they live in separate delete files and are merged at read time.",
-      stats:
-        "column stats · order_id min " +
-        f.bounds.lower.order_id +
-        " max " +
-        f.bounds.upper.order_id +
-        " · " +
-        f.records.length +
-        " records",
+      stats: showStats
+        ? "column stats · order_id min " +
+          f.bounds.lower.order_id +
+          " max " +
+          f.bounds.upper.order_id +
+          " · " +
+          f.records.length +
+          " records"
+        : null,
     };
   }
 

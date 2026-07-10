@@ -58,12 +58,28 @@ test("a manifest popout shows at-a-glance facts, jump links, and entries", async
   await expect(modal.locator(".inspector-section").first()).toHaveText("At a glance");
   await expect(modal.locator(".fact", { hasText: "content" })).toContainText("DATA");
   await expect(modal.locator(".fact", { hasText: "spec" })).toContainText("month(order_date)");
-  // Each data-file entry shows its stored per-column min/max bounds.
-  await expect(modal.locator(".entry__stats").first()).toContainText("order_id min 1001 max 1003");
+  // At medium, per-column min/max stats are hidden.
+  await expect(modal.locator(".entry__stats")).toHaveCount(0);
   // Jump link navigates to a referenced data file.
   await modal.locator(".jump-link.node--data").first().click();
   await expect(modal.locator(".grid")).toBeVisible();
   await expect(modal.locator(".modal-head__title")).toContainText(".parquet");
+});
+
+test("column min/max stats appear in manifest details only at the advanced level", async ({
+  page,
+}) => {
+  const modal = page.locator(".modal-panel");
+  // Medium (default): stats hidden.
+  await page.locator(".node--manifest", { hasText: "m1.avro" }).click();
+  await expect(modal.locator(".entry__stats")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(modal).toBeHidden();
+
+  // Advanced: stats shown.
+  await page.locator(".segmented__btn", { hasText: "Advanced" }).click();
+  await page.locator(".node--manifest", { hasText: "m1.avro" }).click();
+  await expect(modal.locator(".entry__stats").first()).toContainText("order_id min 1001 max 1003");
 });
 
 test("the query planner prunes files whose stats cannot match", async ({ page }) => {
