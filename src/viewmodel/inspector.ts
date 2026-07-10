@@ -102,6 +102,7 @@ export function buildInspector(state: TableState): InspectorModel {
   // Advanced-only detail: column min/max stats (pruning) and the raw metadata /
   // Avro / delete-file JSON. Lower levels get the conceptual summary instead.
   const advanced = state.level === "advanced";
+  const simple = state.level === "simple";
 
   if (kind === "table") {
     const { live, deleted } = liveRecords(state, state.selected);
@@ -278,20 +279,23 @@ export function buildInspector(state: TableState): InspectorModel {
           { k: "delete files", v: rf.xfs.size },
           { k: "live rows", v: liveRows(state, s.id) },
         ],
-        links: [
-          ...s.manifests.map((mid) => {
-            const m = state.manifests[mid];
-            return {
-              label: mid + ".avro",
-              kind: (m && m.kind === "delete" ? "delete" : "manifest") as NodeKind,
-              id: mid,
-            };
-          }),
-          ...(s.parent ? [{ label: "parent " + s.parent, kind: "snapshot" as const, id: s.parent }] : []),
-          ...(metaV != null
-            ? [{ label: "v" + metaV + ".metadata.json", kind: "meta" as const, id: "v" + metaV }]
-            : []),
-        ],
+        // Simple hides the metadata/manifest layers, so drop the jump-to links here.
+        links: simple
+          ? []
+          : [
+              ...s.manifests.map((mid) => {
+                const m = state.manifests[mid];
+                return {
+                  label: mid + ".avro",
+                  kind: (m && m.kind === "delete" ? "delete" : "manifest") as NodeKind,
+                  id: mid,
+                };
+              }),
+              ...(s.parent ? [{ label: "parent " + s.parent, kind: "snapshot" as const, id: s.parent }] : []),
+              ...(metaV != null
+                ? [{ label: "v" + metaV + ".metadata.json", kind: "meta" as const, id: "v" + metaV }]
+                : []),
+            ],
       },
       deletedList: null,
       showRaw: advanced,

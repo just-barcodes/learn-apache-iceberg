@@ -211,14 +211,16 @@ export function computeEdges(state: TableState): Edge[] {
   for (const mid of sel.manifests) {
     const m = state.manifests[mid];
     if (!m) continue;
-    const colorVar = m.kind === "delete" ? LINE_VAR.delete : LINE_VAR.data;
-    edges.push({ from: "snap-" + state.selected, to: "mf-" + mid, colorVar });
+    // snapshot → manifest takes the manifest's own color; manifest → file takes the file's.
+    const manifestColor = m.kind === "delete" ? LINE_VAR.delete : LINE_VAR.manifest;
+    const fileColor = m.kind === "delete" ? LINE_VAR.delete : LINE_VAR.data;
+    edges.push({ from: "snap-" + state.selected, to: "mf-" + mid, colorVar: manifestColor });
     for (const f of m.files) {
       const faint = !!(pruned && m.kind !== "delete" && pruned.has(f));
       edges.push({
         from: "mf-" + mid,
         to: (m.kind === "delete" ? "xf-" : "df-") + f,
-        colorVar,
+        colorVar: fileColor,
         faint,
       });
     }
