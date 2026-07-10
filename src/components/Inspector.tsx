@@ -26,7 +26,14 @@ export function Inspector({ state, dispatch }: Props) {
       <ModalHeader pillKind={m.pillKind} pill={m.pill} title={m.title} subtitle={m.subtitle} mono onClose={close} />
       <div className="modal-body">
         {m.view === "grid" ? <GridView caption={m.caption} cols={m.cols} rows={m.rows} stats={m.stats} /> : null}
-        {m.view === "entries" ? <EntriesView caption={m.caption} entries={m.entries} /> : null}
+        {m.view === "entries" ? (
+          <EntriesView
+            caption={m.caption}
+            entries={m.entries}
+            summary={m.summary}
+            dispatch={dispatch}
+          />
+        ) : null}
         {m.view === "json" ? (
           <JsonView
             caption={m.caption}
@@ -94,9 +101,60 @@ function GridView({
   );
 }
 
-function EntriesView({ caption, entries }: { caption: string; entries: ManifestEntry[] }) {
+/** The shared "At a glance" facts + jump-to links block, used by the json and entries views. */
+function SummarySection({
+  summary,
+  dispatch,
+}: {
+  summary: Summary | null;
+  dispatch: (action: Action) => void;
+}) {
+  if (!summary) return null;
   return (
     <>
+      <div className="inspector-section">At a glance</div>
+      <div className="facts">
+        {summary.facts.map((f) => (
+          <div key={f.k} className="fact">
+            <div className="fact__k">{f.k}</div>
+            <div className="fact__v">{f.v}</div>
+          </div>
+        ))}
+      </div>
+      {summary.links.length > 0 ? (
+        <div className="jump-links">
+          <span className="jump-links__label">Jump to</span>
+          {summary.links.map((l, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`jump-link node--${l.kind}`}
+              onClick={() => dispatch({ type: "openInspect", kind: l.kind, id: l.id })}
+            >
+              {l.label} <span className="jump-link__arrow">→</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function EntriesView({
+  caption,
+  entries,
+  summary,
+  dispatch,
+}: {
+  caption: string;
+  entries: ManifestEntry[];
+  summary: Summary | null;
+  dispatch: (action: Action) => void;
+}) {
+  return (
+    <>
+      <SummarySection summary={summary} dispatch={dispatch} />
+      {summary ? <div className="inspector-section">Files</div> : null}
       <div className="inspector-caption">{caption}</div>
       <div className="entries">
         {entries.map((e, i) => (
@@ -134,35 +192,8 @@ function JsonView({
 }) {
   return (
     <>
-      {summary ? (
-        <>
-          <div className="inspector-section">At a glance</div>
-          <div className="facts">
-            {summary.facts.map((f) => (
-              <div key={f.k} className="fact">
-                <div className="fact__k">{f.k}</div>
-                <div className="fact__v">{f.v}</div>
-              </div>
-            ))}
-          </div>
-          {summary.links.length > 0 ? (
-            <div className="jump-links">
-              <span className="jump-links__label">Jump to</span>
-              {summary.links.map((l, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={`jump-link node--${l.kind}`}
-                  onClick={() => dispatch({ type: "openInspect", kind: l.kind, id: l.id })}
-                >
-                  {l.label} <span className="jump-link__arrow">→</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className="inspector-section">Raw file</div>
-        </>
-      ) : null}
+      <SummarySection summary={summary} dispatch={dispatch} />
+      {summary ? <div className="inspector-section">Raw file</div> : null}
       <div className="inspector-caption">{caption}</div>
       <pre className="json">{jsonText}</pre>
       {deletedList ? (

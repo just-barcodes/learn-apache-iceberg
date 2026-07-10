@@ -51,6 +51,19 @@ test("merge-on-read delete writes a delete file", async ({ page }) => {
   expect(await stat(page, "live rows")).toBe(5);
 });
 
+test("a manifest popout shows at-a-glance facts, jump links, and entries", async ({ page }) => {
+  await page.locator(".node--manifest", { hasText: "m1.avro" }).click();
+  const modal = page.locator(".modal-panel");
+  await expect(modal.locator(".modal-head__title")).toHaveText("m1.avro");
+  await expect(modal.locator(".inspector-section").first()).toHaveText("At a glance");
+  await expect(modal.locator(".fact", { hasText: "content" })).toContainText("DATA");
+  await expect(modal.locator(".fact", { hasText: "spec" })).toContainText("month(order_date)");
+  // Jump link navigates to a referenced data file.
+  await modal.locator(".jump-link.node--data").first().click();
+  await expect(modal.locator(".grid")).toBeVisible();
+  await expect(modal.locator(".modal-head__title")).toContainText(".parquet");
+});
+
 test("the query planner prunes files whose stats cannot match", async ({ page }) => {
   await page.locator(".segmented__btn", { hasText: "Advanced" }).click();
   await page.locator(".query__select").first().selectOption("order_id");

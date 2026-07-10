@@ -1,7 +1,7 @@
 import { snapNum, tsMs } from "../domain/ids";
 import { getSnap, liveRecords, liveRows, metaVForSnap, referencedFiles } from "../domain/selectors";
 import { ORDER_COLS, SPEC_DEFS, TABLE_UUID } from "../domain/specs";
-import type { NodeKind, OrderRecord, TableState } from "../domain/types";
+import type { DataFile, NodeKind, OrderRecord, TableState } from "../domain/types";
 
 type Align = "left" | "right";
 
@@ -56,7 +56,7 @@ interface Base {
 export type InspectorModel =
   | { open: false }
   | (Base & { view: "grid"; caption: string; cols: GridColumn[]; rows: GridRow[]; stats: string | null })
-  | (Base & { view: "entries"; caption: string; entries: ManifestEntry[] })
+  | (Base & { view: "entries"; caption: string; entries: ManifestEntry[]; summary: Summary | null })
   | (Base & {
       view: "json";
       caption: string;
@@ -315,6 +315,49 @@ export function buildInspector(state: TableState): InspectorModel {
         };
       })
       .filter((e): e is ManifestEntry => e !== null);
+
+    // The snapshot that first wrote this manifest shares its sequence number.
+    const addedSnap = state.snapshots.find((s) => s.seq === m.seq) ?? null;
+    const facts: Fact[] = [];
+    const links: JumpLink[] = [];
+    if (m.kind === "delete") {
+      const dfs = m.files.map((f) => state.deleteFiles[f]).filter((f): f is NonNullable<typeof f> => !!f);
+      const deletes = dfs.reduce((a, f) => a + f.deletedIds.length, 0);
+      const size = dfs.reduce((a, f) => a + f.size, 0);
+      const targets = [...new Set(dfs.flatMap((f) => f.targets))];
+      facts.push(
+        { k: "content", v: "DELETES" },
+        { k: "sequence", v: m.seq },
+        { k: "delete files", v: m.files.length },
+        { k: "rows removed", v: deletes },
+        { k: "targets", v: targets.length },
+        { k: "size", v: size + " MB" },
+      );
+    } else {
+      const dfs = m.files.map((f) => state.dataFiles[f]).filter((f): f is DataFile => !!f);
+      const specId = dfs.length ? dfs[0].specId : state.specId || 0;
+      const added = dfs.filter((f) => f.born === m.seq).length;
+      const rows = dfs.reduce((a, f) => a + f.records.length, 0);
+      const size = dfs.reduce((a, f) => a + f.size, 0);
+      const partitions = [...new Set(dfs.map((f) => f.partition))];
+      facts.push(
+        { k: "content", v: "DATA" },
+        { k: "spec", v: SPEC_DEFS[specId].label },
+        { k: "sequence", v: m.seq },
+        { k: "data files", v: m.files.length },
+        { k: "added / existing", v: added + " / " + (m.files.length - added) },
+        { k: "records", v: rows },
+        { k: "partitions", v: partitions.length },
+        { k: "size", v: size + " MB" },
+      );
+    }
+    if (addedSnap) {
+      links.push({ label: "added in " + addedSnap.id, kind: "snapshot", id: addedSnap.id });
+    }
+    m.files.forEach((f) => {
+      links.push({ label: f + ".parquet", kind: m.kind === "delete" ? "delete" : "data", id: f });
+    });
+
     return {
       open: true,
       pillKind: m.kind === "delete" ? "delete" : "manifest",
@@ -329,6 +372,7 @@ export function buildInspector(state: TableState): InspectorModel {
       view: "entries",
       caption:
         "A manifest tracks a set of data (or delete) files, each tagged with a status and partition/stats used to prune reads.",
+      summary: { facts, links },
       entries,
     };
   }
