@@ -1,7 +1,7 @@
 import { snapNum, tsMs } from "../domain/ids";
 import { getSnap, liveRecords, liveRows, metaVForSnap, referencedFiles } from "../domain/selectors";
 import { ORDER_COLS, SPEC_DEFS, TABLE_UUID } from "../domain/specs";
-import type { DataFile, NodeKind, OrderRecord, TableState } from "../domain/types";
+import type { DataFile, DataFileBounds, NodeKind, OrderRecord, TableState } from "../domain/types";
 
 type Align = "left" | "right";
 
@@ -29,6 +29,8 @@ export interface ManifestEntry {
   rows: string;
   size: string;
   extra: string;
+  /** Per-column min/max recorded for this file, or null for delete files. */
+  bounds: string | null;
 }
 
 export interface Fact {
@@ -66,6 +68,15 @@ export type InspectorModel =
     });
 
 const cols: GridColumn[] = ORDER_COLS.map((c) => ({ label: c.label, align: c.align }));
+
+/** Render stored per-column bounds using the app's "col min X max Y" convention. */
+function formatBounds(b: DataFileBounds): string {
+  return (
+    "order_id min " + b.lower.order_id + " max " + b.upper.order_id +
+    " · amount min " + b.lower.amount + " max " + b.upper.amount +
+    " · order_date min " + b.lower.order_date + " max " + b.upper.order_date
+  );
+}
 
 /** Sort records by id and mark rows present in `deletedSet` as struck-through. */
 function gridRows(records: OrderRecord[], deletedSet: Set<number> | null): GridRow[] {
@@ -297,6 +308,7 @@ export function buildInspector(state: TableState): InspectorModel {
             rows: df.deletedIds.length + " deletes",
             size: df.size + " MB",
             extra: "→ " + df.targets.join(", "),
+            bounds: null,
           };
         }
         const dd = state.dataFiles[f];
@@ -312,6 +324,7 @@ export function buildInspector(state: TableState): InspectorModel {
           rows: dd.records.length + " rows",
           size: dd.size + " MB",
           extra: "",
+          bounds: formatBounds(dd.bounds),
         };
       })
       .filter((e): e is ManifestEntry => e !== null);
@@ -380,7 +393,6 @@ export function buildInspector(state: TableState): InspectorModel {
   if (kind === "data") {
     const f = id ? state.dataFiles[id] : undefined;
     if (!f) return { open: false };
-    const ids = f.records.map((r) => r.order_id);
     return {
       open: true,
       pillKind: "data",
@@ -402,9 +414,9 @@ export function buildInspector(state: TableState): InspectorModel {
         "Raw contents of this immutable data file. Deletes are never applied inside the file; they live in separate delete files and are merged at read time.",
       stats:
         "column stats · order_id min " +
-        Math.min(...ids) +
+        f.bounds.lower.order_id +
         " max " +
-        Math.max(...ids) +
+        f.bounds.upper.order_id +
         " · " +
         f.records.length +
         " records",

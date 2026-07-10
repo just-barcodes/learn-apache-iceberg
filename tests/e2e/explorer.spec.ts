@@ -58,6 +58,8 @@ test("a manifest popout shows at-a-glance facts, jump links, and entries", async
   await expect(modal.locator(".inspector-section").first()).toHaveText("At a glance");
   await expect(modal.locator(".fact", { hasText: "content" })).toContainText("DATA");
   await expect(modal.locator(".fact", { hasText: "spec" })).toContainText("month(order_date)");
+  // Each data-file entry shows its stored per-column min/max bounds.
+  await expect(modal.locator(".entry__stats").first()).toContainText("order_id min 1001 max 1003");
   // Jump link navigates to a referenced data file.
   await modal.locator(".jump-link.node--data").first().click();
   await expect(modal.locator(".grid")).toBeVisible();

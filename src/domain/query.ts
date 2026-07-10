@@ -1,34 +1,6 @@
 import { deletedSetFor, getSnap, referencedFiles } from "./selectors";
+import { amt } from "./stats";
 import type { DataFile, OrderRecord, Query, QueryOp, TableState } from "./types";
-
-/** Parse a display amount like "CHF 197.07" into a number. */
-export function amt(v: string): number {
-  return parseFloat(String(v).replace(/[^\d.]/g, "")) || 0;
-}
-
-/** Per-column min/max stats for a data file, as Iceberg keeps in manifests for pruning. */
-export interface FileStats {
-  idMin: number;
-  idMax: number;
-  amtMin: number;
-  amtMax: number;
-  dMin: string;
-  dMax: string;
-}
-
-export function fileStats(f: DataFile): FileStats {
-  const ids = f.records.map((r) => r.order_id);
-  const am = f.records.map((r) => amt(r.amount));
-  const dt = f.records.map((r) => r.order_date);
-  return {
-    idMin: Math.min(...ids),
-    idMax: Math.max(...ids),
-    amtMin: Math.min(...am),
-    amtMax: Math.max(...am),
-    dMin: dt.reduce((a, b) => (a < b ? a : b), dt[0]),
-    dMax: dt.reduce((a, b) => (a > b ? a : b), dt[0]),
-  };
-}
 
 /** Whether a value under `op` could match anything in the [min, max] range. */
 export function rangeOverlap(min: number, max: number, op: QueryOp, v: number): boolean {
@@ -47,18 +19,22 @@ export function rangeOverlap(min: number, max: number, op: QueryOp, v: number): 
   return true;
 }
 
-/** Whether a data file's stats overlap the query, i.e. it cannot be pruned. */
+/**
+ * Whether a data file's stored bounds overlap the query, i.e. it cannot be pruned.
+ * Reads the bounds recorded on the file (as Iceberg reads them from the manifest),
+ * never the row data.
+ */
 export function fileMatchesQuery(f: DataFile, q: Query): boolean {
   if (!q || q.val === "" || q.val == null) return true;
-  const st = fileStats(f);
+  const { lower, upper } = f.bounds;
   if (q.col === "order_date") {
     const L = String(q.val).length;
-    return st.dMin.slice(0, L) <= q.val && q.val <= st.dMax.slice(0, L);
+    return lower.order_date.slice(0, L) <= q.val && q.val <= upper.order_date.slice(0, L);
   }
   const v = parseFloat(q.val);
   if (isNaN(v)) return true;
-  if (q.col === "amount") return rangeOverlap(st.amtMin, st.amtMax, q.op, v);
-  return rangeOverlap(st.idMin, st.idMax, q.op, v);
+  if (q.col === "amount") return rangeOverlap(lower.amount, upper.amount, q.op, v);
+  return rangeOverlap(lower.order_id, upper.order_id, q.op, v);
 }
 
 /** Whether an individual row satisfies the query predicate. */

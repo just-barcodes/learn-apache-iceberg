@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { initialState } from "./initialState";
-import { amt, fileMatchesQuery, planQuery, prunedSet, rowMatches } from "./query";
+import { fileMatchesQuery, planQuery, prunedSet, rowMatches } from "./query";
+import { amt } from "./stats";
 import type { TableState } from "./types";
 
 const withQuery = (q: TableState["q"]): TableState => ({ ...initialState(), qActive: true, q });

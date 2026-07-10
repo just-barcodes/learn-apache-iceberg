@@ -3,6 +3,7 @@ import { initialState } from "./initialState";
 import { genRecords, type GenOptions, type OrderIdCounter } from "./records";
 import { deletedSetFor, getSnap, liveRecords, referencedFiles } from "./selectors";
 import { SPEC_DEFS } from "./specs";
+import { computeBounds } from "./stats";
 import type {
   DetailLevel,
   Manifest,
@@ -57,13 +58,15 @@ export function append(s: TableState): TableState {
     } else {
       pv = month;
     }
+    const records = genRecords(cnt, opts, ctr);
     dataFiles[id] = {
       id,
-      records: genRecords(cnt, opts, ctr),
+      records,
       size: Math.max(1, cnt),
       partition: pv,
       specId,
       born: c.s,
+      bounds: computeBounds(records),
     };
   }
   c.oid = ctr.oid;
@@ -294,15 +297,17 @@ export function compact(s: TableState): TableState {
   const sid = "s" + c.s;
   const v = c.v;
   const cid = "d" + c.d;
+  const compactedRecords = live.map((r) => ({ ...r }));
   const dataFiles = {
     ...s.dataFiles,
     [cid]: {
       id: cid,
-      records: live.map((r) => ({ ...r })),
+      records: compactedRecords,
       size: totalSize,
       partition: "compacted",
       specId: s.specId || 0,
       born: c.s,
+      bounds: computeBounds(compactedRecords),
       compacted: true,
     },
   };

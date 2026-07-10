@@ -170,6 +170,7 @@ function EntriesView({
               <span>{e.size}</span>
               {e.extra ? <span className="entry__extra">{e.extra}</span> : null}
             </div>
+            {e.bounds ? <div className="entry__stats">{e.bounds}</div> : null}
           </div>
         ))}
       </div>

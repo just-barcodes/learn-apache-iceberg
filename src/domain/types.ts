@@ -16,6 +16,16 @@ export interface OrderRecord {
 export type QueryColumn = "order_id" | "amount" | "order_date";
 export type QueryOp = "=" | ">" | ">=" | "<" | "<=";
 
+/**
+ * Per-column lower/upper bounds, as Apache Iceberg persists in each data_file
+ * entry of a manifest. Computed once at write time and read by the query planner
+ * to prune files without opening them.
+ */
+export interface DataFileBounds {
+  lower: { order_id: number; amount: number; order_date: string };
+  upper: { order_id: number; amount: number; order_date: string };
+}
+
 /** An immutable Parquet data file. `born` is the snapshot seq that first wrote it. */
 export interface DataFile {
   id: string;
@@ -24,6 +34,8 @@ export interface DataFile {
   partition: string;
   specId: number;
   born: number;
+  /** Column stats recorded when the file was written (see DataFileBounds). */
+  bounds: DataFileBounds;
   compacted?: boolean;
 }
 

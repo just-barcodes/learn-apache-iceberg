@@ -41,7 +41,8 @@ src/
     ids.ts, specs.ts  Stable ids/timestamps and partition specs
     initialState.ts   The table's starting point (snapshot s1)
     selectors.ts      Derived reads: referenced files, deleted set, live rows
-    query.ts          Query-planner file pruning
+    stats.ts          Per-column min/max bounds, computed at write time
+    query.ts          Query-planner file pruning (reads stored bounds)
     operations.ts     Each commit as a pure state transition
     reducer.ts        Action union → operations
   viewmodel/    Pure state → view data (no JSX)

@@ -1,5 +1,6 @@
 import { clock } from "./ids";
 import { genRecords, type OrderIdCounter } from "./records";
+import { computeBounds } from "./stats";
 import type { TableState } from "./types";
 
 /**
@@ -18,8 +19,8 @@ export function initialState(): TableState {
     snapshots: [{ id: "s1", seq: 1, op: "append", ts: clock(1), parent: null, manifests: ["m1"] }],
     manifests: { m1: { id: "m1", kind: "data", files: ["d1", "d2"], op: "append", seq: 1 } },
     dataFiles: {
-      d1: { id: "d1", records: d1, size: 4, partition: "2026-01", specId: 0, born: 1 },
-      d2: { id: "d2", records: d2, size: 4, partition: "2026-01", specId: 0, born: 1 },
+      d1: { id: "d1", records: d1, size: 4, partition: "2026-01", specId: 0, born: 1, bounds: computeBounds(d1) },
+      d2: { id: "d2", records: d2, size: 4, partition: "2026-01", specId: 0, born: 1, bounds: computeBounds(d2) },
     },
     deleteFiles: {},
     current: "s1",

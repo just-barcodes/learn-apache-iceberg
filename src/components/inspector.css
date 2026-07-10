@@ -239,3 +239,12 @@
 .entry__extra {
   color: var(--delete-line);
 }
+.entry__stats {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border-hair);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  word-break: break-word;
+}
