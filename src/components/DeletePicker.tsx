@@ -59,7 +59,11 @@ export function DeletePicker({ state, dispatch }: Props) {
 
       <div className="picker__footer">
         <div className="picker__random">
-          <button type="button" className="picker__random-btn" onClick={() => dispatch({ type: "randomPick" })}>
+          <button
+            type="button"
+            className="picker__random-btn"
+            onClick={() => dispatch({ type: "randomPick" })}
+          >
             Select random
           </button>
           <input

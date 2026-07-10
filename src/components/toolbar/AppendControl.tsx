@@ -10,11 +10,7 @@ interface Props {
 export function AppendControl({ state, dispatch }: Props) {
   return (
     <div className="append">
-      <button
-        type="button"
-        className="append__main"
-        onClick={() => dispatch({ type: "append" })}
-      >
+      <button type="button" className="append__main" onClick={() => dispatch({ type: "append" })}>
         <span className="action__dot" />
         <span className="action__label">
           <span className="action__title">

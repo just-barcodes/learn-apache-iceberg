@@ -257,7 +257,12 @@ export function confirmDelete(s: TableState): TableState {
       title: "Merge-on-read delete → snapshot " + sid,
       body: "Iceberg does not rewrite the data files. It writes a small delete file marking exactly which rows are gone. Readers subtract deletes from data on the fly: fast to commit, but adds a file to reconcile at read time.",
       bullets: [
-        "delete file " + xid + " removes " + deletedIds.length + " row(s): " + deletedIds.join(", "),
+        "delete file " +
+          xid +
+          " removes " +
+          deletedIds.length +
+          " row(s): " +
+          deletedIds.join(", "),
         "targets " + targets.length + " data file(s): " + targets.join(", ") + " (left untouched)",
         "new delete manifest " + mid + ".avro",
         "snapshot " + sid + " = parent manifests + the delete manifest",

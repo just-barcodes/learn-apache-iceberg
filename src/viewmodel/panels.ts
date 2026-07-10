@@ -29,13 +29,48 @@ interface StatDef extends StatCard {
  */
 export function buildStats(state: TableState): StatCard[] {
   const defs: StatDef[] = [
-    { value: Object.keys(state.dataFiles).length, label: "data files on disk", colorVar: "var(--data-line)", min: "simple" },
-    { value: liveRows(state, state.current), label: "live rows (current)", colorVar: "var(--snapshot-line)", min: "simple" },
-    { value: state.snapshots.length, label: "snapshots", colorVar: "var(--snapshot-line)", min: "simple" },
-    { value: Object.keys(state.deleteFiles).length, label: "delete files", colorVar: "var(--delete-line)", min: "simple" },
-    { value: Object.keys(state.manifests).length, label: "manifests", colorVar: "var(--manifest-line)", min: "medium" },
-    { value: state.metas.length, label: "metadata versions", colorVar: "var(--meta-line)", min: "medium" },
-    { value: state.specs.length, label: "partition specs", colorVar: "var(--meta-line)", min: "advanced" },
+    {
+      value: Object.keys(state.dataFiles).length,
+      label: "data files on disk",
+      colorVar: "var(--data-line)",
+      min: "simple",
+    },
+    {
+      value: liveRows(state, state.current),
+      label: "live rows (current)",
+      colorVar: "var(--snapshot-line)",
+      min: "simple",
+    },
+    {
+      value: state.snapshots.length,
+      label: "snapshots",
+      colorVar: "var(--snapshot-line)",
+      min: "simple",
+    },
+    {
+      value: Object.keys(state.deleteFiles).length,
+      label: "delete files",
+      colorVar: "var(--delete-line)",
+      min: "simple",
+    },
+    {
+      value: Object.keys(state.manifests).length,
+      label: "manifests",
+      colorVar: "var(--manifest-line)",
+      min: "medium",
+    },
+    {
+      value: state.metas.length,
+      label: "metadata versions",
+      colorVar: "var(--meta-line)",
+      min: "medium",
+    },
+    {
+      value: state.specs.length,
+      label: "partition specs",
+      colorVar: "var(--meta-line)",
+      min: "advanced",
+    },
   ];
   return defs.filter((d) => atLeast(state.level, d.min)).map(({ min, ...card }) => card);
 }

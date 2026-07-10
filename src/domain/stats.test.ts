@@ -12,8 +12,20 @@ describe("amt", () => {
 describe("computeBounds", () => {
   it("records per-column lower/upper bounds", () => {
     const records = [
-      { order_id: 1001, customer: "a", amount: "CHF 197.07", order_date: "2026-01-03", status: "paid" },
-      { order_id: 1003, customer: "b", amount: "CHF 271.21", order_date: "2026-01-05", status: "paid" },
+      {
+        order_id: 1001,
+        customer: "a",
+        amount: "CHF 197.07",
+        order_date: "2026-01-03",
+        status: "paid",
+      },
+      {
+        order_id: 1003,
+        customer: "b",
+        amount: "CHF 271.21",
+        order_date: "2026-01-05",
+        status: "paid",
+      },
     ];
     expect(computeBounds(records)).toEqual({
       lower: { order_id: 1001, amount: 197.07, order_date: "2026-01-03" },

@@ -82,7 +82,11 @@ export function QueryPlanner({ state, dispatch }: Props) {
         Run
       </button>
       {active ? (
-        <button type="button" className="query__clear" onClick={() => dispatch({ type: "clearQuery" })}>
+        <button
+          type="button"
+          className="query__clear"
+          onClick={() => dispatch({ type: "clearQuery" })}
+        >
           Clear
         </button>
       ) : null}
@@ -91,8 +95,7 @@ export function QueryPlanner({ state, dispatch }: Props) {
           <b className="query__result-scan">
             {result.scanned}/{result.total}
           </b>
-          &nbsp;scanned ·{" "}
-          <b className="query__result-pruned">{result.pruned}</b>
+          &nbsp;scanned · <b className="query__result-pruned">{result.pruned}</b>
           &nbsp;pruned · <b>{result.rows}</b>&nbsp;rows
         </span>
       ) : null}

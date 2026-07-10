@@ -108,11 +108,7 @@ describe("time travel", () => {
   });
 
   it("jumpCurrent returns to the latest snapshot", () => {
-    const s = run(
-      { type: "append" },
-      { type: "selectSnap", id: "s1" },
-      { type: "jumpCurrent" },
-    );
+    const s = run({ type: "append" }, { type: "selectSnap", id: "s1" }, { type: "jumpCurrent" });
     expect(s.selected).toBe("s2");
   });
 });
@@ -140,11 +136,7 @@ describe("query planner field + detail level", () => {
 
 describe("reset", () => {
   it("restores the initial table but keeps the chosen detail level", () => {
-    const s = run(
-      { type: "setLevel", level: "advanced" },
-      { type: "append" },
-      { type: "reset" },
-    );
+    const s = run({ type: "setLevel", level: "advanced" }, { type: "append" }, { type: "reset" });
     expect(s.current).toBe("s1");
     expect(s.snapshots).toHaveLength(1);
     expect(s.level).toBe("advanced");

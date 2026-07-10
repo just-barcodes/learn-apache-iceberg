@@ -41,7 +41,9 @@ export function ModalHeader({ pillKind, pill, title, subtitle, mono, onClose }: 
     <div className="modal-head">
       <span className={`pill node--${pillKind}`}>{pill}</span>
       <div className="modal-head__titles">
-        <div className={"modal-head__title" + (mono ? " modal-head__title--mono" : "")}>{title}</div>
+        <div className={"modal-head__title" + (mono ? " modal-head__title--mono" : "")}>
+          {title}
+        </div>
         <div className="modal-head__subtitle">{subtitle}</div>
       </div>
       <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>

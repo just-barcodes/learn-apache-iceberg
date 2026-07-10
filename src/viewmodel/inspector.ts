@@ -57,7 +57,13 @@ interface Base {
 
 export type InspectorModel =
   | { open: false }
-  | (Base & { view: "grid"; caption: string; cols: GridColumn[]; rows: GridRow[]; stats: string | null })
+  | (Base & {
+      view: "grid";
+      caption: string;
+      cols: GridColumn[];
+      rows: GridRow[];
+      stats: string | null;
+    })
   | (Base & { view: "entries"; caption: string; entries: ManifestEntry[]; summary: Summary | null })
   | (Base & {
       view: "json";
@@ -74,9 +80,18 @@ const cols: GridColumn[] = ORDER_COLS.map((c) => ({ label: c.label, align: c.ali
 /** Render stored per-column bounds using the app's "col min X max Y" convention. */
 function formatBounds(b: DataFileBounds): string {
   return (
-    "order_id min " + b.lower.order_id + " max " + b.upper.order_id +
-    " · amount min " + b.lower.amount + " max " + b.upper.amount +
-    " · order_date min " + b.lower.order_date + " max " + b.upper.order_date
+    "order_id min " +
+    b.lower.order_id +
+    " max " +
+    b.upper.order_id +
+    " · amount min " +
+    b.lower.amount +
+    " max " +
+    b.upper.amount +
+    " · order_date min " +
+    b.lower.order_date +
+    " max " +
+    b.upper.order_date
   );
 }
 
@@ -145,7 +160,7 @@ export function buildInspector(state: TableState): InspectorModel {
         showRaw: advanced,
       };
     }
-    const uptoSeq = meta.snapshot ? getSnap(state, meta.snapshot)?.seq ?? 0 : 0;
+    const uptoSeq = meta.snapshot ? (getSnap(state, meta.snapshot)?.seq ?? 0) : 0;
     const snaps = state.snapshots
       .filter((s) => s.seq <= uptoSeq)
       .map((s) => {
@@ -162,7 +177,11 @@ export function buildInspector(state: TableState): InspectorModel {
             "total-records": liveRows(state, s.id),
           },
           "manifest-list":
-            "s3://warehouse/db/orders/metadata/snap-" + snapNum(s.seq) + "-1-" + TABLE_UUID + ".avro",
+            "s3://warehouse/db/orders/metadata/snap-" +
+            snapNum(s.seq) +
+            "-1-" +
+            TABLE_UUID +
+            ".avro",
           "schema-id": 0,
         };
       });
@@ -191,12 +210,19 @@ export function buildInspector(state: TableState): InspectorModel {
         const d = SPEC_DEFS[idx];
         return {
           "spec-id": idx,
-          fields: [{ name: d.field, transform: d.transform, "source-id": d.srcId, "field-id": 1000 + idx }],
+          fields: [
+            { name: d.field, transform: d.transform, "source-id": d.srcId, "field-id": 1000 + idx },
+          ],
         };
       }),
-      "current-snapshot-id": meta.snapshot ? snapNum(getSnap(state, meta.snapshot)?.seq ?? 0) : null,
+      "current-snapshot-id": meta.snapshot
+        ? snapNum(getSnap(state, meta.snapshot)?.seq ?? 0)
+        : null,
       snapshots: snaps,
-      "snapshot-log": snaps.map((s) => ({ "snapshot-id": s["snapshot-id"], "timestamp-ms": s["timestamp-ms"] })),
+      "snapshot-log": snaps.map((s) => ({
+        "snapshot-id": s["snapshot-id"],
+        "timestamp-ms": s["timestamp-ms"],
+      })),
     };
     return {
       open: true,
@@ -218,7 +244,13 @@ export function buildInspector(state: TableState): InspectorModel {
         ],
         links: [
           ...(meta.snapshot
-            ? [{ label: "current → " + meta.snapshot, kind: "snapshot" as const, id: meta.snapshot }]
+            ? [
+                {
+                  label: "current → " + meta.snapshot,
+                  kind: "snapshot" as const,
+                  id: meta.snapshot,
+                },
+              ]
             : []),
           { label: "orders table", kind: "table", id: null },
         ],
@@ -291,9 +323,17 @@ export function buildInspector(state: TableState): InspectorModel {
                   id: mid,
                 };
               }),
-              ...(s.parent ? [{ label: "parent " + s.parent, kind: "snapshot" as const, id: s.parent }] : []),
+              ...(s.parent
+                ? [{ label: "parent " + s.parent, kind: "snapshot" as const, id: s.parent }]
+                : []),
               ...(metaV != null
-                ? [{ label: "v" + metaV + ".metadata.json", kind: "meta" as const, id: "v" + metaV }]
+                ? [
+                    {
+                      label: "v" + metaV + ".metadata.json",
+                      kind: "meta" as const,
+                      id: "v" + metaV,
+                    },
+                  ]
                 : []),
             ],
       },
@@ -346,7 +386,9 @@ export function buildInspector(state: TableState): InspectorModel {
     const facts: Fact[] = [];
     const links: JumpLink[] = [];
     if (m.kind === "delete") {
-      const dfs = m.files.map((f) => state.deleteFiles[f]).filter((f): f is NonNullable<typeof f> => !!f);
+      const dfs = m.files
+        .map((f) => state.deleteFiles[f])
+        .filter((f): f is NonNullable<typeof f> => !!f);
       const deletes = dfs.reduce((a, f) => a + f.deletedIds.length, 0);
       const size = dfs.reduce((a, f) => a + f.size, 0);
       const targets = [...new Set(dfs.flatMap((f) => f.targets))];

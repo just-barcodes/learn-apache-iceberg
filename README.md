@@ -1,6 +1,6 @@
 # Iceberg Explorer
 
-An interactive visualization of what happens *inside* an Apache Iceberg table as
+An interactive visualization of what happens _inside_ an Apache Iceberg table as
 you run commits. Append, delete (merge-on-read), compact, expire snapshots,
 evolve the partition spec, and run a query planner, then watch how the metadata
 and data files rewire. Click any node to inspect it; click a snapshot to

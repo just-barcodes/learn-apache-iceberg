@@ -11,7 +11,11 @@ interface Props {
 export function PartitionEvolve({ state, dispatch }: Props) {
   const currentSpec = SPEC_DEFS[state.specId || 0].label;
   return (
-    <button type="button" className="action action--evolve" onClick={() => dispatch({ type: "evolve" })}>
+    <button
+      type="button"
+      className="action action--evolve"
+      onClick={() => dispatch({ type: "evolve" })}
+    >
       <span className="action__row">
         <span className="action__dot" />
         <span className="action__label">

@@ -53,7 +53,13 @@ describe("query planning", () => {
 });
 
 describe("row matching", () => {
-  const r = { order_id: 1005, customer: "x", amount: "CHF 500.00", order_date: "2026-02-11", status: "paid" };
+  const r = {
+    order_id: 1005,
+    customer: "x",
+    amount: "CHF 500.00",
+    order_date: "2026-02-11",
+    status: "paid",
+  };
   it("compares numeric and date predicates", () => {
     expect(rowMatches(r, { col: "order_id", op: ">=", val: "1005" })).toBe(true);
     expect(rowMatches(r, { col: "amount", op: "<", val: "400" })).toBe(false);

@@ -84,7 +84,9 @@
   border-radius: 10px;
   background: var(--card-bg);
   overflow: hidden;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
 }
 .append:hover {
   border-color: var(--act);

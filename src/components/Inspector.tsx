@@ -23,9 +23,18 @@ export function Inspector({ state, dispatch }: Props) {
 
   return (
     <Modal onClose={close} width={640}>
-      <ModalHeader pillKind={m.pillKind} pill={m.pill} title={m.title} subtitle={m.subtitle} mono onClose={close} />
+      <ModalHeader
+        pillKind={m.pillKind}
+        pill={m.pill}
+        title={m.title}
+        subtitle={m.subtitle}
+        mono
+        onClose={close}
+      />
       <div className="modal-body">
-        {m.view === "grid" ? <GridView caption={m.caption} cols={m.cols} rows={m.rows} stats={m.stats} /> : null}
+        {m.view === "grid" ? (
+          <GridView caption={m.caption} cols={m.cols} rows={m.rows} stats={m.stats} />
+        ) : null}
         {m.view === "entries" ? (
           <EntriesView
             caption={m.caption}
@@ -162,7 +171,9 @@ function EntriesView({
           <div key={i} className="entry">
             <div className="entry__head">
               <span className={`entry__status entry__status--${e.statusVariant}`}>{e.status}</span>
-              <span className={`entry__content entry__content--${e.contentVariant}`}>{e.content}</span>
+              <span className={`entry__content entry__content--${e.contentVariant}`}>
+                {e.content}
+              </span>
               <span className="entry__path">{e.path}</span>
             </div>
             <div className="entry__meta">

@@ -27,7 +27,13 @@ export function buildPicker(state: TableState): PickerModel | null {
   dfs.forEach((fid) => {
     for (const r of state.dataFiles[fid]?.records ?? []) {
       if (!del.has(r.order_id)) {
-        raw.push({ oid: r.order_id, customer: r.customer, amount: r.amount, status: r.status, file: fid });
+        raw.push({
+          oid: r.order_id,
+          customer: r.customer,
+          amount: r.amount,
+          status: r.status,
+          file: fid,
+        });
       }
     }
   });
