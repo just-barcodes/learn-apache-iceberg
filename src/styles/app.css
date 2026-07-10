@@ -92,13 +92,3 @@ input::placeholder {
   border-color: var(--border-strong);
   color: var(--text);
 }
-
-/* Temporary shell used while the full UI is built out. */
-.app-shell {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 24px;
-}
