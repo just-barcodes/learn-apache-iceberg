@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#efeadf;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#1c1b18;-webkit-font-smoothing:antialiased}
+a{color:#2f6db3;text-decoration:none}a:hover{color:#24568b}
+@keyframes popIn{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+::-webkit-scrollbar{height:11px;width:11px}
+::-webkit-scrollbar-thumb{background:#cfc8b8;border-radius:7px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:#b9b19d;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input::placeholder{color:#c7c0b0;opacity:1;font-weight:400}
+</style>
+</helmet>
+<div style="height:100vh;display:flex;flex-direction:column;background:#efeadf;overflow:hidden">
+
+  <header style="display:flex;align-items:center;gap:16px;padding:14px 24px 13px;border-bottom:1px solid #ddd6c8;background:#f6f3ec">
+    <div style="width:34px;height:34px;flex:none;border-radius:9px;overflow:hidden;box-shadow:0 1px 3px rgba(30,28,22,.14)">
+      <svg width="34" height="34" viewBox="0 0 32 32">
+        <rect width="32" height="32" fill="#dcebf8"></rect>
+        <rect y="13.5" width="32" height="18.5" fill="#b6d3ec"></rect>
+        <path d="M16 3.5 L21.5 13.5 L10.5 13.5 Z" fill="#ffffff"></path>
+        <path d="M10.5 13.5 H21.5 L25 22 L18.5 29.5 L10 28.5 L6 20 Z" fill="#eef6ff" opacity="0.7"></path>
+        <line x1="0" y1="13.5" x2="32" y2="13.5" stroke="#4f86bd" stroke-width="1.3"></line>
+      </svg>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <h1 style="margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em">Inside an Apache Iceberg Table</h1>
+      <p style="margin:0;font-size:11.5px;color:#6b675e">Run commits and watch how metadata and data files rewire. Click any node to inspect it; click a snapshot to time-travel.</p>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-right:2px">
+      <span style="font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a39d8e">Detail level</span>
+      <div style="display:flex;gap:3px;padding:3px;background:#e8e2d5;border-radius:9px">
+        <sc-for list="{{ levelOpts }}" as="lv" hint-placeholder-count="3">
+          <button onClick="{{ lv.onClick }}" style="{{ lv.style }}">{{ lv.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <button onClick="{{ onReset }}" style="font-family:inherit;font-size:11.5px;font-weight:600;color:#6b675e;background:#fff;border:1.5px solid #d9d3c6;border-radius:9px;padding:8px 14px;cursor:pointer;transition:all .15s" style-hover="border-color:#b9b19d;color:#1c1b18">Reset table</button>
+  </header>
+
+  <div style="display:flex;gap:10px;padding:11px 22px;border-bottom:1px solid #ddd6c8;background:#f2eee4;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
+    <div style="display:flex;align-items:stretch;border:1.5px solid #e2dccd;border-radius:10px;background:#fff;overflow:hidden;transition:box-shadow .15s" style-hover="border-color:#c07b1e;box-shadow:0 3px 9px rgba(192,123,30,.14)">
+      <div onClick="{{ onAppend }}" style="display:flex;align-items:center;gap:10px;padding:8px 13px;cursor:pointer;transition:background .15s" style-hover="background:#fbf4e7">
+        <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#c07b1e;box-shadow:0 0 0 3px rgba(192,123,30,.16)"></span>
+        <span style="display:flex;flex-direction:column;gap:1px">
+          <span style="font-size:12.5px;font-weight:700">Append <span style="font-family:'IBM Plex Mono',monospace">{{ appendRows }}</span> rows</span>
+          <span style="font-size:10px;color:#8a8578">INSERT → new data files + snapshot</span>
+        </span>
+      </div>
+      <div style="display:flex;flex-direction:column;border-left:1.5px solid #e2dccd;background:#faf6ef;width:60px">
+        <input type="text" inputmode="numeric" value="{{ appendRows }}" onInput="{{ onRowsInput }}" style="width:100%;flex:1;border:none;background:transparent;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:14px;color:#1c1b18;padding:2px 0;outline:none" />
+        <div style="display:flex;flex:1;border-top:1px solid #eadfca">
+          <button onClick="{{ onRowsDec }}" style="flex:1;border:none;background:transparent;color:#a07a3c;font-size:16px;line-height:1;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;transition:background .12s" style-hover="background:#f2e7d2">−</button>
+          <div style="width:1px;background:#eadfca"></div>
+          <button onClick="{{ onRowsInc }}" style="flex:1;border:none;background:transparent;color:#a07a3c;font-size:15px;line-height:1;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;transition:background .12s" style-hover="background:#f2e7d2">+</button>
+        </div>
+      </div>
+    </div>
+    <button onClick="{{ onDelete }}" style="display:flex;align-items:center;gap:10px;padding:8px 15px;border-radius:10px;border:1.5px solid #e2dccd;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s" style-hover="border-color:#c0442e;box-shadow:inset 0 0 0 200px #fbeeea,0 3px 9px rgba(192,68,46,.14)">
+      <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#c0442e;box-shadow:0 0 0 3px rgba(192,68,46,.16)"></span>
+      <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:12.5px;font-weight:700">Delete rows</span><span style="font-size:10px;color:#8a8578">merge-on-read → delete file</span></span>
+    </button>
+    <sc-if value="{{ showCompact }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ onCompact }}" style="display:flex;align-items:center;gap:10px;padding:8px 15px;border-radius:10px;border:1.5px solid #e2dccd;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s" style-hover="border-color:#7a55b8;box-shadow:inset 0 0 0 200px #f4eefb,0 3px 9px rgba(122,85,184,.14)">
+      <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#7a55b8;box-shadow:0 0 0 3px rgba(122,85,184,.16)"></span>
+      <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:12.5px;font-weight:700">Compact</span><span style="font-size:10px;color:#8a8578">rewrite small files → one</span></span>
+    </button>
+    </sc-if>
+    <sc-if value="{{ showExpire }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ onExpire }}" style="display:flex;align-items:center;gap:10px;padding:8px 15px;border-radius:10px;border:1.5px solid #e2dccd;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s" style-hover="border-color:#6b675e;box-shadow:inset 0 0 0 200px #f1efe8,0 3px 9px rgba(107,103,94,.14)">
+      <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#6b675e;box-shadow:0 0 0 3px rgba(107,103,94,.16)"></span>
+      <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:12.5px;font-weight:700">Expire snapshots</span><span style="font-size:10px;color:#8a8578">drop history → GC old files</span></span>
+    </button>
+    </sc-if>
+    <sc-if value="{{ showEvolve }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ onEvolve }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:7px 13px;border-radius:10px;border:1.5px solid #e2dccd;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s" style-hover="border-color:#2f6db3;box-shadow:inset 0 0 0 200px #e9f0f9,0 3px 9px rgba(47,109,179,.14)">
+      <span style="display:flex;align-items:center;gap:9px">
+        <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#2f6db3;box-shadow:0 0 0 3px rgba(47,109,179,.16)"></span>
+        <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:12.5px;font-weight:700">Evolve partition</span><span style="font-size:10px;color:#8a8578">change spec (metadata only)</span></span>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:#2f6db3;background:#e9f0f9;border:1px solid #cddef0;border-radius:7px;padding:2px 8px"><span style="font-family:'IBM Plex Sans',sans-serif;font-size:8px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d99bd">active</span>{{ currentSpec }}</span>
+    </button>
+    </sc-if>
+    <sc-if value="{{ showQuery }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:11px;border:1.5px solid #e2dccd;border-radius:10px;background:#fff;padding:7px 13px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:9px">
+        <span style="width:9px;height:9px;flex:none;border-radius:3px;background:#2f6db3;box-shadow:0 0 0 3px rgba(47,109,179,.16)"></span>
+        <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:12.5px;font-weight:700">Query planner</span><span style="font-size:10px;color:#8a8578">file pruning by stats</span></span>
+      </span>
+      <span style="width:1px;align-self:stretch;background:#eadfca"></span>
+      <span style="display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#8a8578">
+        <span>WHERE</span>
+        <select value="{{ query.col }}" onChange="{{ query.onCol }}" style="font-family:inherit;font-size:11px;color:#1c1b18;border:1.5px solid #e2dccd;border-radius:7px;padding:4px 6px;background:#fff;cursor:pointer;outline:none">
+          <sc-for list="{{ query.cols }}" as="c" hint-placeholder-count="3"><option value="{{ c.v }}">{{ c.l }}</option></sc-for>
+        </select>
+        <sc-if value="{{ query.isNum }}" hint-placeholder-val="{{ true }}">
+          <select value="{{ query.op }}" onChange="{{ query.onOp }}" style="font-family:inherit;font-size:11px;color:#1c1b18;border:1.5px solid #e2dccd;border-radius:7px;padding:4px 6px;background:#fff;cursor:pointer;outline:none">
+            <sc-for list="{{ query.ops }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for>
+          </select>
+        </sc-if>
+        <sc-if value="{{ query.isDate }}" hint-placeholder-val="{{ false }}"><span style="font-weight:700;color:#1c1b18">=</span></sc-if>
+        <input type="text" value="{{ query.val }}" onInput="{{ query.onVal }}" placeholder="{{ query.valPlaceholder }}" style="width:74px;font-family:inherit;font-size:11px;font-weight:600;color:#1c1b18;border:1.5px solid #e2dccd;border-radius:7px;padding:4px 7px;background:#fff;outline:none" />
+      </span>
+      <button onClick="{{ query.onRun }}" disabled="{{ query.runDisabled }}" style="{{ query.runStyle }}">Run</button>
+      <sc-if value="{{ query.active }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ query.onClear }}" style="font-family:inherit;font-size:11px;font-weight:600;padding:6px 11px;border-radius:8px;border:1.5px solid #e2dccd;background:#fff;color:#6b675e;cursor:pointer">Clear</button>
+      </sc-if>
+      <sc-if value="{{ query.result }}" hint-placeholder-val="{{ false }}">
+        <span style="display:flex;align-items:center;gap:7px;padding:4px 11px;background:#eef3f9;border:1px solid #cddef0;border-radius:8px;font-size:10.5px;color:#4a463e"><b style="font-family:'IBM Plex Mono',monospace;color:#2f6db3;font-size:12.5px">{{ query.result.scanned }}/{{ query.result.total }}</b>&nbsp;scanned &middot; <b style="color:#2f8f5b">{{ query.result.pruned }}</b>&nbsp;pruned &middot; <b>{{ query.result.rows }}</b>&nbsp;rows</span>
+      </sc-if>
+    </div>
+    </sc-if>
+    </div>
+    <div style="flex:1;min-width:20px"></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:9px;background:{{ viewBadge.bg }};border:1.5px solid {{ viewBadge.bd }}">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.08em;color:{{ viewBadge.fg }}">{{ viewBadge.label }}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:#1c1b18">{{ selectedLabel }}</span>
+      <sc-if value="{{ isViewingOld }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ onJumpCurrent }}" style="font-family:inherit;font-size:10px;font-weight:600;color:#2f8f5b;background:#fff;border:1px solid #a9d4bd;border-radius:6px;padding:3px 8px;cursor:pointer">jump to current →</button>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+    <div style="flex:1;overflow:auto;position:relative">
+      <div ref="{{ innerRef }}" style="position:relative;display:flex;gap:78px;padding:20px 46px 34px;min-width:max-content;align-items:flex-start">
+        <svg ref="{{ svgRef }}" style="position:absolute;top:0;left:0;pointer-events:none;z-index:0;overflow:visible"></svg>
+
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+          <div style="font-size:10px;letter-spacing:.14em;font-weight:700;color:#8a8578;text-transform:uppercase;height:16px;display:flex;align-items:center">Catalog</div>
+          <div ref="{{ tableNode.ref }}" style="{{ tableNode.style }}" onClick="{{ tableNode.onClick }}" style-hover="transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,28,22,.13)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+              <span style="{{ tableNode.pillStyle }}">{{ tableNode.pill }}</span>
+              <span style="{{ tableNode.tagStyle }}">{{ tableNode.tag }}</span>
+            </div>
+            <div style="font-weight:600;font-size:13px;line-height:1.2">{{ tableNode.name }}</div>
+            <div style="font-size:10.5px;color:#6b675e;line-height:1.25">{{ tableNode.sub }}</div>
+            <div style="font-size:9.5px;color:#8a8578;font-family:'IBM Plex Mono',monospace">{{ tableNode.note }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+          <div style="font-size:10px;letter-spacing:.14em;font-weight:700;color:#8a8578;text-transform:uppercase;height:16px;display:flex;align-items:center;gap:7px">Metadata<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:#a39d8e;background:#e6e0d2;border-radius:5px;padding:1px 6px;letter-spacing:0">{{ counts.meta }}</span></div>
+          <sc-for list="{{ metaNodes }}" as="n" hint-placeholder-count="2">
+            <div ref="{{ n.ref }}" style="{{ n.style }}" onClick="{{ n.onClick }}" style-hover="transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,28,22,.13)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+                <span style="{{ n.pillStyle }}">{{ n.pill }}</span>
+                <sc-if value="{{ n.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ n.tagStyle }}">{{ n.tag }}</span></sc-if>
+              </div>
+              <div style="font-weight:600;font-size:12px;line-height:1.2;word-break:break-all">{{ n.name }}</div>
+              <div style="font-size:10.5px;color:#6b675e;line-height:1.25">{{ n.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+          <div style="font-size:10px;letter-spacing:.14em;font-weight:700;color:#8a8578;text-transform:uppercase;height:16px;display:flex;align-items:center;gap:7px">Snapshots<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:#a39d8e;background:#e6e0d2;border-radius:5px;padding:1px 6px;letter-spacing:0">{{ counts.snap }}</span></div>
+          <sc-for list="{{ snapNodes }}" as="n" hint-placeholder-count="1">
+            <div ref="{{ n.ref }}" style="{{ n.style }}" onClick="{{ n.onClick }}" style-hover="transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,28,22,.13)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+                <span style="{{ n.pillStyle }}">{{ n.pill }}</span>
+                <sc-if value="{{ n.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ n.tagStyle }}">{{ n.tag }}</span></sc-if>
+              </div>
+              <div style="font-weight:600;font-size:12.5px;line-height:1.2">{{ n.name }}</div>
+              <div style="font-size:10.5px;color:#6b675e;line-height:1.25">{{ n.sub }}</div>
+              <div style="font-size:9.5px;color:#8a8578;font-family:'IBM Plex Mono',monospace;word-break:break-all">{{ n.note }}</div>
+              <sc-if value="{{ n.hint }}" hint-placeholder-val="{{ false }}"><div style="font-size:9.5px;color:#2f8f5b;font-weight:600;margin-top:2px">{{ n.hint }} ↵</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+          <div style="font-size:10px;letter-spacing:.14em;font-weight:700;color:#8a8578;text-transform:uppercase;height:16px;display:flex;align-items:center;gap:7px">Manifests<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:#a39d8e;background:#e6e0d2;border-radius:5px;padding:1px 6px;letter-spacing:0">{{ counts.manifest }}</span></div>
+          <sc-for list="{{ manifestNodes }}" as="n" hint-placeholder-count="1">
+            <div ref="{{ n.ref }}" style="{{ n.style }}" onClick="{{ n.onClick }}" style-hover="transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,28,22,.13)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+                <span style="{{ n.pillStyle }}">{{ n.pill }}</span>
+                <sc-if value="{{ n.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ n.tagStyle }}">{{ n.tag }}</span></sc-if>
+              </div>
+              <div style="font-weight:600;font-size:12px;line-height:1.2;word-break:break-all">{{ n.name }}</div>
+              <div style="font-size:10.5px;color:#6b675e;line-height:1.25">{{ n.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;position:relative;z-index:1">
+          <div style="font-size:10px;letter-spacing:.14em;font-weight:700;color:#8a8578;text-transform:uppercase;height:16px;display:flex;align-items:center;gap:7px">Data &amp; delete files<span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;color:#a39d8e;background:#e6e0d2;border-radius:5px;padding:1px 6px;letter-spacing:0">{{ counts.file }}</span></div>
+          <sc-for list="{{ fileNodes }}" as="n" hint-placeholder-count="2">
+            <div ref="{{ n.ref }}" style="{{ n.style }}" onClick="{{ n.onClick }}" style-hover="transform:translateY(-2px);box-shadow:0 7px 18px rgba(30,28,22,.13)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+                <span style="{{ n.pillStyle }}">{{ n.pill }}</span>
+                <sc-if value="{{ n.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ n.tagStyle }}">{{ n.tag }}</span></sc-if>
+              </div>
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+                <span style="font-weight:600;font-size:12px;line-height:1.2;word-break:break-all">{{ n.name }}</span>
+                <sc-if value="{{ n.meta }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:#6b675e;white-space:nowrap;font-family:'IBM Plex Mono',monospace">{{ n.meta }}</span></sc-if>
+              </div>
+              <sc-if value="{{ n.sub }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;color:#6b675e;line-height:1.25">{{ n.sub }}</div></sc-if>
+              <sc-if value="{{ n.note }}" hint-placeholder-val="{{ true }}"><div style="font-size:9.5px;color:#8a8578;font-family:'IBM Plex Mono',monospace">{{ n.note }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </div>
+
+    <aside style="width:346px;flex:none;border-left:1px solid #ddd6c8;background:#f6f3ec;overflow:auto;padding:18px 18px 34px;display:flex;flex-direction:column;gap:15px">
+
+      <div style="background:#fff;border:1.5px solid {{ lastStep.accent }};border-radius:12px;padding:14px 15px;box-shadow:0 1px 3px rgba(30,28,22,.06)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ lastStep.accent }};flex:none"></span>
+          <span style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:{{ lastStep.accent }}">What just happened</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:6px">{{ lastStep.title }}</div>
+        <div style="font-size:11.5px;line-height:1.5;color:#4a463e;margin-bottom:9px">{{ lastStep.body }}</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <sc-for list="{{ lastStep.bullets }}" as="b" hint-placeholder-count="3">
+            <div style="display:flex;gap:7px;align-items:flex-start;font-size:11px;line-height:1.4;color:#4a463e">
+              <span style="color:{{ lastStep.accent }};font-weight:700;flex:none">·</span><span>{{ b }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <sc-for list="{{ statCards }}" as="s" hint-placeholder-count="4">
+          <div style="background:#fff;border:1px solid #e2dccd;border-radius:10px;padding:9px 11px">
+            <div style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:{{ s.color }}">{{ s.value }}</div>
+            <div style="font-size:9.5px;color:#8a8578;margin-top:3px;line-height:1.2">{{ s.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e2dccd;border-radius:11px;padding:12px 13px">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a8578;margin-bottom:9px">Legend</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ legend }}" as="l" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:9px">
+              <span style="width:13px;height:13px;border-radius:4px;flex:none;background:{{ l.bg }};border:1.5px solid {{ l.bd }}"></span>
+              <span style="font-size:11px;color:#4a463e"><b style="font-weight:600">{{ l.name }}</b>: {{ l.desc }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:center;gap:9px;margin-top:2px">
+            <span style="width:13px;height:6px;flex:none;border-top:2px dashed #2f8f5b"></span>
+            <span style="font-size:11px;color:#4a463e"><b style="font-weight:600">Current pointer</b>: while time-travelling</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid #e2dccd;border-radius:11px;padding:12px 13px;flex:1;min-height:120px;display:flex;flex-direction:column">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a8578;margin-bottom:9px">Commit log</div>
+        <div style="display:flex;flex-direction:column;gap:8px;overflow:auto">
+          <sc-for list="{{ logNodes }}" as="e" hint-placeholder-count="1">
+            <div style="display:flex;gap:9px;align-items:flex-start">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;color:#fff;background:{{ e.color }};border-radius:5px;padding:2px 6px;flex:none;margin-top:1px">{{ e.badge }}</span>
+              <span style="font-size:11px;line-height:1.4;color:#4a463e">{{ e.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <sc-if value="{{ inspector.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ inspector.onClose }}" style="position:fixed;inset:0;z-index:50;background:rgba(28,27,24,.42);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:34px;animation:fadeIn .16s ease both">
+      <div onClick="{{ inspector.stop }}" style="width:640px;max-width:100%;max-height:82vh;display:flex;flex-direction:column;background:#fbfaf6;border:1px solid #ddd6c8;border-radius:16px;box-shadow:0 24px 64px rgba(28,27,24,.3);overflow:hidden;animation:popIn .2s ease both">
+        <div style="display:flex;align-items:center;gap:11px;padding:15px 18px;border-bottom:1px solid #eae4d7;background:#fff">
+          <span style="{{ inspector.pillStyle }}">{{ inspector.pill }}</span>
+          <div style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#1c1b18">{{ inspector.title }}</div>
+            <div style="font-size:11px;color:#8a8578">{{ inspector.subtitle }}</div>
+          </div>
+          <button onClick="{{ inspector.onClose }}" style="width:30px;height:30px;flex:none;border-radius:8px;border:1px solid #e2dccd;background:#fff;color:#6b675e;cursor:pointer;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit" style-hover="border-color:#b9b19d;color:#1c1b18">×</button>
+        </div>
+        <div style="overflow:auto;padding:16px 18px">
+
+          <sc-if value="{{ inspector.isGrid }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11px;color:#8a8578;margin-bottom:10px;line-height:1.4">{{ inspector.caption }}</div>
+            <div style="border:1px solid #e2dccd;border-radius:10px;overflow:hidden">
+              <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+                <thead><tr>
+                  <sc-for list="{{ inspector.cols }}" as="c" hint-placeholder-count="5"><th style="{{ c.thStyle }}">{{ c.label }}</th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ inspector.rows }}" as="r" hint-placeholder-count="4">
+                    <tr style="{{ r.trStyle }}">
+                      <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="5"><td style="{{ cell.tdStyle }}">{{ cell.v }}</td></sc-for>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <sc-if value="{{ inspector.stats }}" hint-placeholder-val="{{ false }}">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8578;margin-top:9px">{{ inspector.stats }}</div>
+            </sc-if>
+          </sc-if>
+
+          <sc-if value="{{ inspector.isEntries }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11px;color:#8a8578;margin-bottom:10px;line-height:1.4">{{ inspector.caption }}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ inspector.entries }}" as="e" hint-placeholder-count="2">
+                <div style="border:1px solid #e2dccd;border-radius:10px;padding:10px 12px;background:#fff">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">
+                    <span style="{{ e.statusStyle }}">{{ e.status }}</span>
+                    <span style="{{ e.contentStyle }}">{{ e.content }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600">{{ e.path }}</span>
+                  </div>
+                  <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10.5px;color:#6b675e;font-family:'IBM Plex Mono',monospace">
+                    <span>{{ e.partition }}</span><span>{{ e.rows }}</span><span>{{ e.size }}</span><span style="color:#c0442e">{{ e.extra }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ inspector.isJson }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ inspector.summary }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a39d8e;margin-bottom:9px">At a glance</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+                <sc-for list="{{ inspector.summary.facts }}" as="f" hint-placeholder-count="4">
+                  <div style="background:#fff;border:1px solid #e2dccd;border-radius:9px;padding:6px 11px;min-width:72px">
+                    <div style="font-size:8.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#a39d8e;margin-bottom:2px">{{ f.k }}</div>
+                    <div style="font-size:13px;font-weight:600;font-family:'IBM Plex Mono',monospace;color:#1c1b18">{{ f.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ inspector.summary.hasLinks }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+                  <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a39d8e">Jump to</span>
+                  <sc-for list="{{ inspector.summary.links }}" as="l" hint-placeholder-count="2">
+                    <button onClick="{{ l.onClick }}" style="font-family:inherit;font-size:11px;font-weight:600;padding:5px 11px;border-radius:8px;border:1.5px solid {{ l.bd }};background:{{ l.bg }};color:{{ l.fg }};cursor:pointer;display:flex;align-items:center;gap:5px;transition:box-shadow .12s,transform .12s" style-hover="box-shadow:0 2px 8px rgba(30,28,22,.14);transform:translateY(-1px)">{{ l.label }} <span style="opacity:.55">&rarr;</span></button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a39d8e;margin-bottom:9px">Raw file</div>
+            </sc-if>
+            <div style="font-size:11px;color:#8a8578;margin-bottom:10px;line-height:1.4">{{ inspector.caption }}</div>
+            <pre style="margin:0;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.55;color:#2c2a25;background:#f3efe6;border:1px solid #e2dccd;border-radius:10px;padding:14px;overflow:auto;white-space:pre">{{ inspector.jsonText }}</pre>
+            <sc-if value="{{ inspector.deletedList }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px;font-size:11px;color:#6b675e">Removes order_id → <span style="font-family:'IBM Plex Mono',monospace;color:#c0442e;font-weight:600">{{ inspector.deletedList }}</span></div>
+            </sc-if>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ picker.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ picker.onCancel }}" style="position:fixed;inset:0;z-index:55;background:rgba(28,27,24,.42);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:34px;animation:fadeIn .16s ease both">
+      <div onClick="{{ picker.stop }}" style="width:560px;max-width:100%;max-height:82vh;display:flex;flex-direction:column;background:#fbfaf6;border:1px solid #ddd6c8;border-radius:16px;box-shadow:0 24px 64px rgba(28,27,24,.3);overflow:hidden;animation:popIn .2s ease both">
+        <div style="display:flex;align-items:center;gap:11px;padding:15px 18px;border-bottom:1px solid #eae4d7;background:#fff">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.09em;padding:1.5px 6px;border-radius:5px;background:#c0442e;color:#fff">DELETE</span>
+          <div style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:#1c1b18">Delete rows</div>
+            <div style="font-size:11px;color:#8a8578">Pick the rows to remove; a merge-on-read delete file will mark them</div>
+          </div>
+          <button onClick="{{ picker.onCancel }}" style="width:30px;height:30px;flex:none;border-radius:8px;border:1px solid #e2dccd;background:#fff;color:#6b675e;cursor:pointer;font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit" style-hover="border-color:#b9b19d;color:#1c1b18">×</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:7px 16px;background:#f3efe6;border-bottom:1px solid #e2dccd;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8a8578">
+          <span style="width:18px;flex:none"></span><span style="width:48px;flex:none">id</span><span style="flex:1">customer</span><span style="width:70px;flex:none;text-align:right">amount</span><span style="width:64px;flex:none">status</span><span style="width:92px;flex:none;text-align:right">file</span>
+        </div>
+        <div style="overflow:auto;flex:1">
+          <sc-for list="{{ picker.rows }}" as="r" hint-placeholder-count="5">
+            <div onClick="{{ r.onToggle }}" style="{{ r.rowStyle }}">
+              <span style="{{ r.boxStyle }}">{{ r.check }}</span>
+              <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5"><span style="{{ c.s }}">{{ c.v }}</span></sc-for>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:13px 18px;border-top:1px solid #eae4d7;background:#fff">
+          <div style="display:flex;align-items:center;gap:6px">
+            <button onClick="{{ picker.onRandom }}" style="font-family:inherit;font-size:11px;font-weight:600;padding:8px 12px;border-radius:8px;border:1.5px solid #e2dccd;background:#fff;color:#6b675e;cursor:pointer;transition:box-shadow .12s" style-hover="box-shadow:inset 0 0 0 200px #f2eee4">Select random</button>
+            <input type="text" inputmode="numeric" value="{{ picker.randomN }}" onInput="{{ picker.onRandomInput }}" style="width:42px;text-align:center;border:1.5px solid #e2dccd;border-radius:8px;padding:7px 4px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:#1c1b18;outline:none;background:#fff" />
+            <span style="font-size:10.5px;color:#8a8578">of {{ picker.liveCount }}</span>
+          </div>
+          <span style="font-size:11.5px;color:#6b675e"><b style="font-family:'IBM Plex Mono',monospace;color:#c0442e">{{ picker.count }}</b> selected</span>
+          <div style="flex:1"></div>
+          <button onClick="{{ picker.onCancel }}" style="font-family:inherit;font-size:12px;font-weight:600;padding:9px 15px;border-radius:9px;border:1.5px solid #e2dccd;background:#fff;color:#6b675e;cursor:pointer">Cancel</button>
+          <button onClick="{{ picker.onConfirm }}" style="{{ picker.confirmStyle }}">{{ picker.confirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  palette = {
+    table:    { bg:'#eef1f5', bd:'#8ba7c6', ring:'rgba(47,109,179,.18)', line:'#2f6db3' },
+    meta:     { bg:'#e9f0f9', bd:'#2f6db3', ring:'rgba(47,109,179,.22)', line:'#2f6db3' },
+    snapshot: { bg:'#e6f2ea', bd:'#2f8f5b', ring:'rgba(47,143,91,.24)', line:'#2f8f5b' },
+    manifest: { bg:'#f0eafa', bd:'#7a55b8', ring:'rgba(122,85,184,.22)', line:'#7a55b8' },
+    data:     { bg:'#f9f0dd', bd:'#c07b1e', ring:'rgba(192,123,30,.22)', line:'#c07b1e' },
+    delete:   { bg:'#f9e6e0', bd:'#c0442e', ring:'rgba(192,68,46,.22)', line:'#c0442e' },
+  };
+  uuid = 'a3f9c1e2-7b44-4d18-9e5a-2c6f0b8d51aa';
+  orderCols = [
+    { key:'order_id',   label:'order_id',   align:'right', mono:true },
+    { key:'customer',   label:'customer',   align:'left',  mono:false },
+    { key:'amount',     label:'amount',     align:'right', mono:true },
+    { key:'order_date', label:'order_date', align:'left',  mono:true },
+    { key:'status',     label:'status',     align:'left',  mono:false },
+  ];
+  specDefs = [
+    { label:'month(order_date)', field:'order_date', transform:'month', srcId:4 },
+    { label:'day(order_date)', field:'order_date', transform:'day', srcId:4 },
+    { label:'bucket(order_id, 4)', field:'order_id', transform:'bucket[4]', srcId:1 },
+  ];
+
+  partVal(specId, month, i){
+    const d=this.specDefs[specId]||this.specDefs[0];
+    if(d.transform==='day') return month+'-'+String(1+((i*9+3)%27)).padStart(2,'0');
+    if(d.transform.indexOf('bucket')===0) return 'bucket_'+(i%4);
+    return month;
+  }
+  amt(v){ return parseFloat(String(v).replace(/[^\d.]/g,''))||0; }
+  metaVForSnap(snapId, st){ const S=st||this.state; const ms=S.metas.filter(m=>m.snapshot===snapId); return ms.length?Math.max(...ms.map(m=>m.v)):undefined; }
+  fileStats(f){ const ids=f.records.map(r=>r.order_id); const am=f.records.map(r=>this.amt(r.amount)); const dt=f.records.map(r=>r.order_date); return { idMin:Math.min(...ids), idMax:Math.max(...ids), amtMin:Math.min(...am), amtMax:Math.max(...am), dMin:dt.reduce((a,b)=>a<b?a:b,dt[0]), dMax:dt.reduce((a,b)=>a>b?a:b,dt[0]) }; }
+  rangeOverlap(min,max,op,v){ switch(op){ case '=':return v>=min&&v<=max; case '>':return max>v; case '>=':return max>=v; case '<':return min<v; case '<=':return min<=v; } return true; }
+  fileMatchesQuery(f,q){ if(!q||q.val===''||q.val==null) return true; const st=this.fileStats(f); if(q.col==='order_date'){ const L=String(q.val).length; return st.dMin.slice(0,L)<=q.val && q.val<=st.dMax.slice(0,L); } const v=parseFloat(q.val); if(isNaN(v)) return true; if(q.col==='amount') return this.rangeOverlap(st.amtMin,st.amtMax,q.op,v); return this.rangeOverlap(st.idMin,st.idMax,q.op,v); }
+  rowMatches(r,q){ if(q.col==='order_date'){ return String(r.order_date).slice(0,String(q.val).length)===String(q.val); } const a=q.col==='amount'?this.amt(r.amount):r.order_id; const v=parseFloat(q.val); switch(q.op){ case '=':return a===v; case '>':return a>v; case '>=':return a>=v; case '<':return a<v; case '<=':return a<=v; } return true; }
+  prunedSet(){ const S=this.state; if(!S.qActive||!S.q||S.q.val===''||S.q.val==null) return null; const sel=this.getSnap(S.selected); const {dfs}=this.referencedFiles(sel); const out=new Set(); dfs.forEach(id=>{ const f=S.dataFiles[id]; if(f&&!this.fileMatchesQuery(f,S.q)) out.add(id); }); return out; }
+
+  genRecords(n, opts, ctr){
+    const customers=['Stark Industries','Oscorp','Roxxon Energy','Pym Technologies','Alchemax','Hammer Ind.','Rand Enterprises','Baxter Foundation'];
+    const statuses=['paid','pending','shipped','refunded'];
+    const out=[]; let made=0, guard=0;
+    while(made<n && guard<n*8+50){
+      guard++; ctr.oid++; const id=ctr.oid;
+      if(opts.bucket!=null && (id%4)!==opts.bucket) continue;
+      const day = opts.day!=null ? opts.day : (1+(id%27));
+      out.push({
+        order_id:id,
+        customer:customers[id%customers.length],
+        amount:'CHF '+(((id*37)%900)+60)+'.'+String((id*7)%100).padStart(2,'0'),
+        order_date:opts.month+'-'+String(day).padStart(2,'0'),
+        status:statuses[id%statuses.length],
+      });
+      made++;
+    }
+    return out;
+  }
+
+  initialState(){
+    const ctr={oid:1000};
+    const d1=this.genRecords(3,{month:'2026-01'},ctr);
+    const d2=this.genRecords(3,{month:'2026-01'},ctr);
+    return {
+      metas: [ {v:1, snapshot:null, specId:0}, {v:2, snapshot:'s1', specId:0} ],
+      snapshots: [ {id:'s1', seq:1, op:'append', ts:this.clock(1), parent:null, manifests:['m1']} ],
+      manifests: { m1:{ id:'m1', kind:'data', files:['d1','d2'], op:'append', seq:1 } },
+      dataFiles: {
+        d1:{ id:'d1', records:d1, size:4, partition:'2026-01', specId:0, born:1 },
+        d2:{ id:'d2', records:d2, size:4, partition:'2026-01', specId:0, born:1 },
+      },
+      deleteFiles: {},
+      current: 's1',
+      selected: 's1',
+      inspect: null,
+      picker: null,
+      appendRows: 6,
+      specs: [0],
+      specId: 0,
+      q: { col:'amount', op:'>=', val:'' },
+      qActive: false,
+      level: 'medium',
+      counters: { d:2, x:0, m:1, s:1, v:2, oid:ctr.oid },
+      log: [ {n:1, op:'append', text:'Created table + appended 2 data files (d1, d2) → snapshot s1, metadata v2.'} ],
+      lastStep: {
+        op:'append',
+        title:'Table created at snapshot s1',
+        body:'The table starts with one append commit. A snapshot is an immutable pointer to the exact set of files that make up the table at a point in time.',
+        bullets:['2 data files on disk (d1, d2)','1 data manifest m1.avro lists them','metadata v2 sets current-snapshot → s1'],
+      },
+    };
+  }
+  state = this.initialState();
+
+  clock(seq){ const t=600+seq*7, h=Math.floor(t/60)%24, m=t%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
+  snapNum(seq){ return 100000000 + seq*7654321; }
+  tsMs(seq){ return 1704067200000 + seq*420000; }
+  getSnap(id){ return this.state.snapshots.find(s=>s.id===id) || null; }
+  getSnapIn(snaps,id){ return snaps.find(s=>s.id===id) || null; }
+
+  referencedFiles(snap, st){
+    const S=st||this.state; const mans=new Set(), dfs=new Set(), xfs=new Set();
+    if(snap) for(const mid of snap.manifests){
+      mans.add(mid); const m=S.manifests[mid]; if(!m) continue;
+      for(const f of m.files){ if(m.kind==='delete') xfs.add(f); else dfs.add(f); }
+    }
+    return {mans,dfs,xfs};
+  }
+  deletedSetFor(snap, st){
+    const S=st||this.state; const set=new Set();
+    if(snap) for(const mid of snap.manifests){
+      const m=S.manifests[mid]; if(!m||m.kind!=='delete') continue;
+      for(const f of m.files){ (S.deleteFiles[f]?.deletedIds||[]).forEach(o=>set.add(o)); }
+    }
+    return set;
+  }
+  liveRecords(snapId, st){
+    const S=st||this.state; const snap=(S.snapshots.find(s=>s.id===snapId))||null;
+    const {dfs}=this.referencedFiles(snap,S); const del=this.deletedSetFor(snap,S);
+    const all=[]; dfs.forEach(id=>{ (S.dataFiles[id]?.records||[]).forEach(r=>all.push(r)); });
+    const live=[], deleted=[];
+    all.forEach(r=>{ (del.has(r.order_id)?deleted:live).push(r); });
+    return {live, deleted};
+  }
+  liveRows(snapId, st){ return this.liveRecords(snapId, st).live.length; }
+
+  // ---- operations ----
+  onRowsInc = () => this.setState(s=>({...s, appendRows:Math.min(999,(parseInt(s.appendRows,10)||0)+1)}));
+  onRowsDec = () => this.setState(s=>({...s, appendRows:Math.max(1,(parseInt(s.appendRows,10)||1)-1)}));
+  onRowsInput = (e) => { const d=String(e.target.value).replace(/\D/g,''); this.setState(s=>({...s, appendRows: d===''?'':Math.min(999,parseInt(d,10))})); };
+
+  onAppend = () => this.setState(s=>{
+    const c={...s.counters, oid:s.counters.oid}; c.s++; c.v++; const sid='s'+c.s, v=c.v;
+    const month='2026-0'+((c.s%3)+1);
+    const specId=s.specId||0;
+    const specDef=this.specDefs[specId];
+    const ctr={oid:c.oid};
+    const rows=Math.max(1, Math.min(999, parseInt(s.appendRows,10)||3));
+    const nFiles = rows<50 ? 1 : (rows<300 ? 2 : 3);
+    const nd=[]; const dataFiles={...s.dataFiles};
+    for(let i=0;i<nFiles;i++){
+      const cnt=Math.floor(rows/nFiles)+(i<rows%nFiles?1:0);
+      c.d++; const id='d'+c.d; nd.push(id);
+      let opts={month}, pv;
+      if(specDef.transform==='day'){ const day=1+((i*9+3)%27); opts.day=day; pv=month+'-'+String(day).padStart(2,'0'); }
+      else if(specDef.transform.indexOf('bucket')===0){ const b=i%4; opts.bucket=b; pv='bucket_'+b; }
+      else { pv=month; }
+      dataFiles[id]={id, records:this.genRecords(cnt,opts,ctr), size:Math.max(1,cnt), partition:pv, specId, born:c.s};
+    }
+    c.oid=ctr.oid;
+    c.m++; const mid='m'+c.m;
+    const manifests={...s.manifests, [mid]:{id:mid, kind:'data', files:nd, op:'append', seq:c.s}};
+    const parent=this.getSnapIn(s.snapshots, s.current);
+    const manList=parent?[...parent.manifests, mid]:[mid];
+    const snap={id:sid, seq:c.s, op:'append', ts:this.clock(c.s), parent:parent?parent.id:null, manifests:manList};
+    return {...s, counters:c, dataFiles, manifests, snapshots:[...s.snapshots, snap], metas:[...s.metas, {v, snapshot:sid, specId}], current:sid, selected:sid,
+      log:[{n:c.s, op:'append', text:'Appended '+rows+' rows across '+nFiles+' data file(s) ('+nd.join(', ')+') → snapshot '+sid+', metadata v'+v+'.'}, ...s.log],
+      lastStep:{op:'append', title:'Append commit → snapshot '+sid,
+        body:'INSERT writes new immutable data files, wraps them in a new manifest, then commits a new snapshot. Iceberg reuses the parent’s existing manifests, so only the delta is written.',
+        bullets:[rows+' rows written to '+nFiles+' new data file(s): '+nd.join(', '),'new data manifest '+mid+'.avro','snapshot '+sid+' points at '+manList.length+' manifest(s); old ones reused','metadata bumped to v'+v+', current-snapshot moved to '+sid]}};
+  });
+
+  onDelete = () => this.setState(s=>{
+    const live=this.liveRecords(s.current, s).live;
+    if(!live.length){ return {...s, lastStep:{op:'delete', title:'Nothing left to delete', body:'There are no live rows in the current snapshot. Append some rows first.', bullets:[]}}; }
+    return {...s, picker:{selected:{}, n:3}};
+  });
+  setRandomN = (e) => { const d=String(e.target.value).replace(/\D/g,''); this.setState(s=>({...s, picker:{...s.picker, n: d===''?'':parseInt(d,10)}})); };
+  togglePick = (oid, file) => this.setState(s=>{ const sel={...s.picker.selected}; if(sel[oid]) delete sel[oid]; else sel[oid]=file; return {...s, picker:{...s.picker, selected:sel}}; });
+  cancelPicker = () => this.setState(s=>({...s, picker:null}));
+  onRandomPick = () => this.setState(s=>{
+    const cur=this.getSnapIn(s.snapshots, s.current);
+    const {dfs}=this.referencedFiles(cur, s);
+    const del=this.deletedSetFor(cur, s);
+    const rows=[];
+    [...dfs].forEach(fid=>{ (s.dataFiles[fid]?.records||[]).forEach(r=>{ if(!del.has(r.order_id)) rows.push({oid:r.order_id, file:fid}); }); });
+    if(!rows.length) return s;
+    const want=Math.max(1, Math.min(rows.length, parseInt(s.picker&&s.picker.n,10)||1));
+    const shuffled=rows.slice().sort(()=>Math.random()-0.5).slice(0,want);
+    const sel={}; shuffled.forEach(x=>{ sel[x.oid]=x.file; });
+    return {...s, picker:{...s.picker, selected:sel}};
+  });
+  confirmDelete = () => this.setState(s=>{
+    const sel=s.picker?s.picker.selected:{};
+    const entries=Object.keys(sel).map(k=>({order_id:Number(k), file:sel[k]}));
+    if(!entries.length) return s;
+    const cur=this.getSnapIn(s.snapshots, s.current);
+    const c={...s.counters}; c.s++; c.v++; c.x++; const sid='s'+c.s, v=c.v, xid='x'+c.x;
+    const deletedIds=entries.map(e=>e.order_id).sort((a,b)=>a-b);
+    const targets=[...new Set(entries.map(e=>e.file))].sort();
+    const deleteFiles={...s.deleteFiles, [xid]:{id:xid, entries, deletedIds, targets, size:1, born:c.s}};
+    c.m++; const mid='m'+c.m;
+    const manifests={...s.manifests, [mid]:{id:mid, kind:'delete', files:[xid], op:'delete', seq:c.s}};
+    const manList=[...cur.manifests, mid];
+    const snap={id:sid, seq:c.s, op:'delete', ts:this.clock(c.s), parent:cur.id, manifests:manList};
+    return {...s, picker:null, counters:c, deleteFiles, manifests, snapshots:[...s.snapshots, snap], metas:[...s.metas, {v, snapshot:sid, specId:s.specId||0}], current:sid, selected:sid,
+      log:[{n:c.s, op:'delete', text:'Merge-on-read delete of '+deletedIds.length+' row(s) ('+deletedIds.join(', ')+') → delete file '+xid+', snapshot '+sid+'.'}, ...s.log],
+      lastStep:{op:'delete', title:'Merge-on-read delete → snapshot '+sid,
+        body:'Iceberg does not rewrite the data files. It writes a small delete file marking exactly which rows are gone. Readers subtract deletes from data on the fly: fast to commit, but adds a file to reconcile at read time.',
+        bullets:['delete file '+xid+' removes '+deletedIds.length+' row(s): '+deletedIds.join(', '),'targets '+targets.length+' data file(s): '+targets.join(', ')+' (left untouched)','new delete manifest '+mid+'.avro','snapshot '+sid+' = parent manifests + the delete manifest']}};
+  });
+
+  onCompact = () => this.setState(s=>{
+    const cur=this.getSnapIn(s.snapshots, s.current);
+    const {dfs,xfs}=this.referencedFiles(cur, s);
+    const dataIds=[...dfs], delIds=[...xfs];
+    if(dataIds.length<2 && delIds.length===0){ return {...s, lastStep:{op:'compaction', title:'Nothing worth compacting', body:'Compaction pays off with several small data files (or delete files to apply). Append a few more times, then compact.', bullets:[]}}; }
+    const live=this.liveRecords(s.current, s).live;
+    const totalSize=Math.max(4, dataIds.reduce((a,id)=>a+(s.dataFiles[id]?.size||0),0));
+    const c={...s.counters}; c.s++; c.v++; c.d++; const sid='s'+c.s, v=c.v, cid='d'+c.d;
+    const dataFiles={...s.dataFiles, [cid]:{id:cid, records:live.map(r=>({...r})), size:totalSize, partition:'compacted', specId:s.specId||0, born:c.s, compacted:true}};
+    c.m++; const mid='m'+c.m;
+    const manifests={...s.manifests, [mid]:{id:mid, kind:'data', files:[cid], op:'compaction', seq:c.s}};
+    const snap={id:sid, seq:c.s, op:'compaction', ts:this.clock(c.s), parent:cur.id, manifests:[mid]};
+    return {...s, counters:c, dataFiles, manifests, snapshots:[...s.snapshots, snap], metas:[...s.metas, {v, snapshot:sid, specId:s.specId||0}], current:sid, selected:sid,
+      log:[{n:c.s, op:'compaction', text:'Compacted '+dataIds.length+' data + '+delIds.length+' delete file(s) into '+cid+' → snapshot '+sid+'.'}, ...s.log],
+      lastStep:{op:'compaction', title:'Compaction → snapshot '+sid,
+        body:'Compaction rewrites many small files into one, applying pending deletes as it goes. For readers it is a metadata-only commit: '+sid+' gets a brand-new manifest list. The old files stay on disk; older snapshots still reference them, so time travel keeps working.',
+        bullets:[dataIds.length+' data + '+delIds.length+' delete file(s) merged into '+cid,'deletes baked in: '+live.length+' live rows remain','new snapshot uses a fresh manifest list ('+mid+'.avro)','old files persist until you expire snapshots']}};
+  });
+
+  onExpire = () => this.setState(s=>{
+    if(s.snapshots.length<=1){ return {...s, lastStep:{op:'expire', title:'Nothing to expire', body:'There is only one snapshot. Make a few commits, then expire to reclaim storage.', bullets:[]}}; }
+    const cur=this.getSnapIn(s.snapshots, s.current);
+    const kept=this.referencedFiles(cur, s);
+    const snapshots=[{...cur, parent:null}];
+    const manifests={}; kept.mans.forEach(id=>{ if(s.manifests[id]) manifests[id]=s.manifests[id]; });
+    const dataFiles={}; kept.dfs.forEach(id=>{ if(s.dataFiles[id]) dataFiles[id]=s.dataFiles[id]; });
+    const deleteFiles={}; kept.xfs.forEach(id=>{ if(s.deleteFiles[id]) deleteFiles[id]=s.deleteFiles[id]; });
+    const metas=s.metas.filter(m=>m.snapshot===cur.id);
+    const dropSnaps=s.snapshots.length-1;
+    const gcD=Object.keys(s.dataFiles).length-Object.keys(dataFiles).length;
+    const gcX=Object.keys(s.deleteFiles).length-Object.keys(deleteFiles).length;
+    const gcM=Object.keys(s.manifests).length-Object.keys(manifests).length;
+    return {...s, snapshots, manifests, dataFiles, deleteFiles, metas, selected:cur.id, inspect:null,
+      log:[{n:cur.seq, op:'expire', text:'Expired '+dropSnaps+' snapshot(s); GC removed '+gcD+' data, '+gcX+' delete, '+gcM+' manifest file(s).'}, ...s.log],
+      lastStep:{op:'expire', title:'Expired snapshots → kept '+cur.id,
+        body:'Expiring drops old snapshots from the metadata. Any file no longer reachable from a surviving snapshot is then safe to garbage-collect. This reclaims storage but permanently ends time travel to the removed snapshots.',
+        bullets:[dropSnaps+' snapshot(s) removed from history',gcD+' data + '+gcX+' delete file(s) garbage-collected',gcM+' orphaned manifest(s) cleaned up','only '+cur.id+' remains reachable']}};
+  });
+
+  onReset = () => { this.els={}; this.setState(s=>({...this.initialState(), level:s.level})); };
+  onSetLevel = (l) => this.setState(s=>({...s, level:l, qActive: l==='advanced'?s.qActive:false}));
+  onJumpCurrent = () => this.setState(s=>({...s, selected:s.current}));
+  selectSnap = (id) => this.setState(s=>({...s, selected:id}));
+  openInspect = (kind, id) => this.setState(s=>({...s, inspect:{kind, id}}));
+  closeInspect = () => this.setState(s=>({...s, inspect:null}));
+  onEvolve = () => this.setState(s=>{
+    const next=((s.specId||0)+1)%this.specDefs.length;
+    const specs = s.specs.includes(next) ? s.specs : [...s.specs, next];
+    const c={...s.counters}; c.v++; const v=c.v; const d=this.specDefs[next];
+    return {...s, specId:next, specs, counters:c, metas:[...s.metas, {v, snapshot:s.current, specId:next}],
+      log:[{n:(this.getSnapIn(s.snapshots,s.current)||{}).seq||0, op:'evolve', text:'Evolved partition spec \u2192 '+d.label+' (spec-'+next+'); wrote metadata v'+v+' (no new snapshot).'}, ...s.log],
+      lastStep:{op:'evolve', title:'Partition evolution \u2192 spec-'+next,
+        body:'Changing the partition spec is a metadata-only operation \u2014 no data is rewritten and no snapshot is created. A new metadata version records the new spec ('+d.label+'). Existing data files keep their old spec; only files written afterwards use the new one.',
+        bullets:['new partition spec: '+d.label,'metadata bumped to v'+v+', current-snapshot pointer unchanged','existing data files keep their original spec','append now to see files written under the new spec']}};
+  });
+  setQCol = (e)=>this.setState(s=>({...s, q:{...s.q, col:e.target.value}}));
+  setQOp = (e)=>this.setState(s=>({...s, q:{...s.q, op:e.target.value}}));
+  setQVal = (e)=>this.setState(s=>({...s, q:{...s.q, val:e.target.value}}));
+  runQuery = ()=>this.setState(s=>((s.q&&s.q.val!==''&&s.q.val!=null)?{...s, qActive:true}:s));
+  clearQuery = ()=>this.setState(s=>({...s, qActive:false}));
+
+  // ---- connectors ----
+  els = {};
+  svgRef = (el)=>{ this.svgEl=el; };
+  innerRef = (el)=>{ this.innerEl=el; };
+  refFor = (id) => (el)=>{ if(el) this.els[id]=el; };
+
+  computeEdges(){
+    const S=this.state, P=this.palette;
+    const sel=this.getSnap(S.selected); if(!sel) return [];
+    const edges=[];
+    const pruned=this.prunedSet();
+    const selMeta=this.metaVForSnap(S.selected);
+    if(selMeta!=null){ edges.push({from:'table', to:'meta-v'+selMeta, color:P.meta.line}); edges.push({from:'meta-v'+selMeta, to:'snap-'+S.selected, color:P.snapshot.line}); }
+    for(const mid of sel.manifests){
+      const m=S.manifests[mid]; if(!m) continue;
+      const col=m.kind==='delete'?P.delete.line:P.data.line;
+      edges.push({from:'snap-'+S.selected, to:'mf-'+mid, color:col});
+      for(const f of m.files){ const isP = pruned && m.kind!=='delete' && pruned.has(f); edges.push({from:'mf-'+mid, to:(m.kind==='delete'?'xf-':'df-')+f, color:col, faint:isP}); }
+    }
+    if(S.current!==S.selected){ const cm=this.metaVForSnap(S.current); if(cm!=null) edges.push({from:'meta-v'+cm, to:'snap-'+S.current, color:P.snapshot.line, dash:true}); }
+    return edges;
+  }
+  drawLines = () => {
+    const svg=this.svgEl, inner=this.innerEl; if(!svg||!inner) return;
+    const w=inner.scrollWidth, h=inner.scrollHeight;
+    svg.setAttribute('width',w); svg.setAttribute('height',h); svg.style.width=w+'px'; svg.style.height=h+'px';
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    const base=inner.getBoundingClientRect(); const NS='http://www.w3.org/2000/svg';
+    for(const e of this.computeEdges()){
+      const a=this.els[e.from], b=this.els[e.to]; if(!a||!b) continue;
+      const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+      const x1=ra.right-base.left, y1=ra.top-base.top+ra.height/2, x2=rb.left-base.left, y2=rb.top-base.top+rb.height/2;
+      const dx=Math.max(30,(x2-x1)*0.5);
+      const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
+      p.setAttribute('fill','none'); p.setAttribute('stroke',e.color); p.setAttribute('stroke-width', e.dash?1.6:2); p.setAttribute('stroke-linecap','round'); p.setAttribute('opacity', e.faint?0.1:(e.dash?0.65:0.9));
+      if(e.dash) p.setAttribute('stroke-dasharray','5 5');
+      svg.appendChild(p);
+      if(!e.dash && !e.faint){ const dot=document.createElementNS(NS,'circle'); dot.setAttribute('cx',x2); dot.setAttribute('cy',y2); dot.setAttribute('r',2.6); dot.setAttribute('fill',e.color); dot.setAttribute('opacity',0.9); svg.appendChild(dot); }
+    }
+  };
+  scheduleDraw = () => { cancelAnimationFrame(this._raf); this._raf=requestAnimationFrame(this.drawLines); };
+  onKey = (e) => { if(e.key==='Escape') this.closeInspect(); };
+  componentDidMount(){
+    this.ro=new ResizeObserver(()=>this.scheduleDraw()); if(this.innerEl) this.ro.observe(this.innerEl);
+    window.addEventListener('resize', this.scheduleDraw); window.addEventListener('keydown', this.onKey);
+    this.scheduleDraw(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>this.scheduleDraw());
+  }
+  componentDidUpdate(){ this.scheduleDraw(); }
+  componentWillUnmount(){ if(this.ro) this.ro.disconnect(); window.removeEventListener('resize', this.scheduleDraw); window.removeEventListener('keydown', this.onKey); cancelAnimationFrame(this._raf); }
+
+  // ---- node styling ----
+  boxStyle(kind, {active, current, pruned, scanned}={}){
+    const c=this.palette[kind];
+    let s=`display:flex;flex-direction:column;gap:1px;min-width:180px;max-width:236px;padding:6px 12px;border-radius:10px;background:${c.bg};border:1.5px solid ${c.bd};box-shadow:0 1px 2px rgba(30,28,22,.07);position:relative;z-index:1;cursor:pointer;transition:opacity .3s,filter .3s,box-shadow .2s,transform .15s;animation:popIn .3s ease both;`;
+    if(!active) s+='opacity:.3;filter:grayscale(.5);';
+    if(pruned) s+='opacity:.24;filter:grayscale(.7);';
+    if(scanned) s+=`box-shadow:0 0 0 2.5px rgba(47,143,91,.5),0 1px 2px rgba(30,28,22,.07);border-color:#2f8f5b;`;
+    if(current) s+=`box-shadow:0 0 0 3px ${c.ring},0 1px 2px rgba(30,28,22,.07);border-width:2px;`;
+    return s;
+  }
+  prunedTagStyle(){ return "font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.03em;padding:1.5px 6px;border-radius:5px;background:#eee7d9;border:1px solid #d9d3c6;color:#a39d8e"; }
+  pillStyle(kind){ const c=this.palette[kind]; return `font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:600;letter-spacing:.09em;padding:1.5px 6px;border-radius:5px;background:${c.bd};color:#fff`; }
+  tagStyle(kind){ const c=this.palette[kind]; return `font-family:'IBM Plex Mono',monospace;font-size:8.5px;font-weight:700;letter-spacing:.03em;padding:1.5px 6px;border-radius:5px;background:#fff;border:1px solid ${c.bd};color:${c.bd}`; }
+  thStyle(c){ return `padding:8px 10px;text-align:${c.align};background:#f3efe6;border-bottom:1px solid #e2dccd;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8a8578;white-space:nowrap`; }
+  tdStyle(c, deleted){ return `padding:6px 10px;text-align:${c.align};border-top:1px solid #eee7d9;white-space:nowrap;${c.mono?"font-family:'IBM Plex Mono',monospace;":''}${deleted?'color:#b7b0a1;text-decoration:line-through;':'color:#2c2a25;'}`; }
+
+  gridRows(records, deletedSet){
+    const rows=records.slice().sort((a,b)=>a.order_id-b.order_id).map(r=>{
+      const deleted=deletedSet && deletedSet.has(r.order_id);
+      return { trStyle:`background:${deleted?'#faf1ee':'#fff'}`, cells:this.orderCols.map(c=>({v:String(r[c.key]), tdStyle:this.tdStyle(c, deleted)})) };
+    });
+    return rows;
+  }
+
+  buildInspector(){
+    const S=this.state, P=this.palette;
+    if(!S.inspect) return {open:false};
+    const {kind,id}=S.inspect;
+    const cols=this.orderCols.map(c=>({label:c.label, thStyle:this.thStyle(c)}));
+    const head=(k, pill)=>({ open:true, pill, pillStyle:this.pillStyle(k), onClose:this.closeInspect, stop:(e)=>e.stopPropagation() });
+    const linkTo=(k, lid, label)=>{ const c=P[k]||P.table; return { label, bg:c.bg, bd:c.bd, fg:c.line, onClick:()=>this.openInspect(k, lid) }; };
+    const mkSummary=(facts, links)=>({ facts, links, hasLinks: links.length>0 });
+
+    if(kind==='table'){
+      const {live,deleted}=this.liveRecords(S.selected);
+      const all=[...live.map(r=>({...r,_d:false})), ...deleted.map(r=>({...r,_d:true}))];
+      const dset=new Set(deleted.map(r=>r.order_id));
+      return {...head('snapshot','TABLE'), title:'orders', subtitle:'materialized table @ '+S.selected,
+        isGrid:true, cols,
+        rows:this.gridRows(all, dset),
+        caption: deleted.length ? live.length+' live rows. '+deleted.length+' row(s) are hidden by merge-on-read delete files (shown struck through); this reconciliation happens at read time.' : live.length+' live rows, materialized from '+this.referencedFiles(this.getSnap(S.selected)).dfs.size+' data file(s).',
+        stats:null };
+    }
+
+    if(kind==='meta'){
+      const meta=S.metas.find(m=>('v'+m.v)===id) || S.metas.find(m=>String(m.v)===String(id));
+      if(!meta) return {...head('meta','JSON'), title:id+'.metadata.json', subtitle:'expired', isJson:true, jsonText:'// this metadata version was removed when snapshots expired'};
+      const uptoSeq = meta.snapshot ? (this.getSnap(meta.snapshot)||{}).seq||0 : 0;
+      const snaps=S.snapshots.filter(s=>s.seq<=uptoSeq).map(s=>{
+        const rf=this.referencedFiles(s);
+        return {
+          'snapshot-id':this.snapNum(s.seq),
+          'parent-snapshot-id': s.parent?this.snapNum((this.getSnap(s.parent)||{}).seq):null,
+          'sequence-number':s.seq,
+          'timestamp-ms':this.tsMs(s.seq),
+          'summary':{ 'operation':s.op, 'total-data-files':rf.dfs.size, 'total-delete-files':rf.xfs.size, 'total-records':this.liveRows(s.id) },
+          'manifest-list':'s3://warehouse/db/orders/metadata/snap-'+this.snapNum(s.seq)+'-1-'+this.uuid+'.avro',
+          'schema-id':0,
+        };
+      });
+      const obj={
+        'format-version':2,
+        'table-uuid':this.uuid,
+        'location':'s3://warehouse/db/orders',
+        'last-updated-ms':this.tsMs(uptoSeq),
+        'last-column-id':5,
+        'current-schema-id':0,
+        'schemas':[{ 'type':'struct','schema-id':0,'fields':[
+          {'id':1,'name':'order_id','required':true,'type':'long'},
+          {'id':2,'name':'customer','required':false,'type':'string'},
+          {'id':3,'name':'amount','required':false,'type':'decimal(10,2)'},
+          {'id':4,'name':'order_date','required':false,'type':'string'},
+          {'id':5,'name':'status','required':false,'type':'string'},
+        ]}],
+        'default-spec-id': meta.specId||0,
+        'partition-specs': S.specs.map(idx=>{ const d=this.specDefs[idx]; return { 'spec-id':idx, 'fields':[{ 'name':d.field, 'transform':d.transform, 'source-id':d.srcId, 'field-id':1000+idx }] }; }),
+        'current-snapshot-id': meta.snapshot ? this.snapNum((this.getSnap(meta.snapshot)||{}).seq) : null,
+        'snapshots':snaps,
+        'snapshot-log':snaps.map(s=>({'snapshot-id':s['snapshot-id'],'timestamp-ms':s['timestamp-ms']})),
+      };
+      return {...head('meta','JSON'), title:'v'+meta.v+'.metadata.json', subtitle:'root table metadata: schema, partition spec, snapshot list',
+        summary: mkSummary(
+          [ {k:'format', v:'v2'}, {k:'columns', v:5}, {k:'spec', v:this.specDefs[meta.specId||0].label}, {k:'snapshots', v:snaps.length}, {k:'current', v: meta.snapshot||'none'} ],
+          [ ...(meta.snapshot?[linkTo('snapshot', meta.snapshot, 'current → '+meta.snapshot)]:[]), linkTo('table', null, 'orders table') ]
+        ),
+        isJson:true, caption:'This single JSON file is the entry point for the table. The catalog just stores a pointer to the latest version.', jsonText:JSON.stringify(obj,null,2) };
+    }
+
+    if(kind==='snapshot'){
+      const s=this.getSnap(id); if(!s) return {open:false};
+      const rf=this.referencedFiles(s);
+      const manifests=s.manifests.map(mid=>{
+        const m=S.manifests[mid]; if(!m) return null;
+        return { 'manifest-path':m.id+'-'+this.uuid+'.avro', 'content':m.kind==='delete'?'DELETES':'DATA', 'sequence-number':m.seq, 'added-snapshot-id':this.snapNum(m.seq), 'added-files-count':m.files.length };
+      }).filter(Boolean);
+      const obj={
+        'snapshot-id':this.snapNum(s.seq),
+        'parent-snapshot-id': s.parent?this.snapNum((this.getSnap(s.parent)||{}).seq):null,
+        'sequence-number':s.seq,
+        'timestamp-ms':this.tsMs(s.seq),
+        'operation':s.op,
+        'summary':{ 'operation':s.op, 'total-data-files':rf.dfs.size, 'total-delete-files':rf.xfs.size, 'total-records':this.liveRows(s.id), 'changed-partition-count':1 },
+        'manifests':manifests,
+      };
+      const metaV=this.metaVForSnap(s.id);
+      return {...head('snapshot','AVRO'), title:'manifest-list-'+s.id+'.avro', subtitle:'snapshot '+s.id+' · '+s.op,
+        summary: mkSummary(
+          [ {k:'operation', v:s.op}, {k:'sequence', v:s.seq}, {k:'data files', v:rf.dfs.size}, {k:'delete files', v:rf.xfs.size}, {k:'live rows', v:this.liveRows(s.id)} ],
+          [ ...s.manifests.map(mid=>{ const m=S.manifests[mid]; return linkTo(m&&m.kind==='delete'?'delete':'manifest', mid, mid+'.avro'); }),
+            ...(s.parent?[linkTo('snapshot', s.parent, 'parent '+s.parent)]:[]),
+            ...(metaV!=null?[linkTo('meta', 'v'+metaV, 'v'+metaV+'.metadata.json')]:[]) ]
+        ),
+        isJson:true, caption:'A snapshot’s manifest list enumerates the manifests that make up the table at this commit (decoded from Avro to JSON here).', jsonText:JSON.stringify(obj,null,2) };
+    }
+
+    if(kind==='manifest'){
+      const m=S.manifests[id]; if(!m) return {open:false};
+      const entries=m.files.map(f=>{
+        if(m.kind==='delete'){
+          const df=S.deleteFiles[f]; if(!df) return null;
+          return { status:'ADDED', statusStyle:this.entryStatusStyle('ADDED'), content:'DELETES', contentStyle:this.entryContentStyle('DELETES'), path:f+'.parquet', partition:'part=n/a', rows:df.deletedIds.length+' deletes', size:df.size+' MB', extra:'→ '+((df.targets||[df.target]).join(', ')) };
+        }
+        const dd=S.dataFiles[f]; if(!dd) return null;
+        const status=dd.born===m.seq?'ADDED':'EXISTING';
+        return { status, statusStyle:this.entryStatusStyle(status), content:'DATA', contentStyle:this.entryContentStyle('DATA'), path:f+'.parquet', partition:'part='+dd.partition, rows:dd.records.length+' rows', size:dd.size+' MB', extra:'' };
+      }).filter(Boolean);
+      return {...head(m.kind==='delete'?'delete':'manifest','AVRO'), title:m.id+'.avro', subtitle:(m.kind==='delete'?'delete manifest':'data manifest')+' · '+entries.length+' entr'+(entries.length===1?'y':'ies'),
+        isEntries:true, caption:'A manifest tracks a set of data (or delete) files, each tagged with a status and partition/stats used to prune reads.', entries };
+    }
+
+    if(kind==='data'){
+      const f=S.dataFiles[id]; if(!f) return {open:false};
+      const ids=f.records.map(r=>r.order_id);
+      return {...head('data','PARQUET'), title:f.id+'.parquet', subtitle:f.records.length+' rows · '+f.size+' MB · part='+f.partition+' · '+this.specDefs[f.specId||0].label+(f.compacted?' · compacted':''),
+        isGrid:true, cols, rows:this.gridRows(f.records, null),
+        caption:'Raw contents of this immutable data file. Deletes are never applied inside the file; they live in separate delete files and are merged at read time.',
+        stats:'column stats · order_id min '+Math.min(...ids)+' max '+Math.max(...ids)+' · '+f.records.length+' records' };
+    }
+
+    if(kind==='delete'){
+      const f=S.deleteFiles[id]; if(!f) return {open:false};
+      const entries=f.entries||f.deletedIds.map(oid=>({order_id:oid, file:f.target}));
+      const recs=entries.map(e=>{
+        const tgt=S.dataFiles[e.file];
+        const pos=tgt?tgt.records.findIndex(r=>r.order_id===e.order_id):-1;
+        return { 'file_path':'s3://warehouse/db/orders/data/'+e.file+'.parquet', 'pos':pos };
+      });
+      const targets=f.targets||[f.target];
+      const obj={ 'content':'POSITION_DELETES', 'referenced-data-files':targets.map(t=>t+'.parquet'), 'record-count':recs.length, 'records':recs };
+      return {...head('delete','PARQUET'), title:f.id+'.parquet', subtitle:'positional delete file → '+targets.join(', '),
+        isJson:true, caption:'A position-delete file lists (file, row-position) pairs to skip. Readers of the referenced data files drop these rows on the fly.', jsonText:JSON.stringify(obj,null,2), deletedList:f.deletedIds.join(', ') };
+    }
+    return {open:false};
+  }
+  entryStatusStyle(s){ const map={ADDED:'#2f8f5b',EXISTING:'#8a8578',DELETED:'#c0442e'}; const c=map[s]||'#8a8578'; return `font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:5px;background:${c};color:#fff`; }
+  entryContentStyle(s){ const c=s==='DELETES'?'#c0442e':'#c07b1e'; return `font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:5px;background:#fff;border:1px solid ${c};color:${c}`; }
+
+  buildPicker(){
+    const S=this.state; if(!S.picker) return {open:false};
+    const cur=this.getSnap(S.current);
+    const {dfs}=this.referencedFiles(cur);
+    const del=this.deletedSetFor(cur);
+    const rows=[];
+    [...dfs].forEach(fid=>{ (S.dataFiles[fid]?.records||[]).forEach(r=>{ if(!del.has(r.order_id)) rows.push({r, file:fid}); }); });
+    rows.sort((a,b)=>a.r.order_id-b.r.order_id);
+    const sel=S.picker.selected;
+    const list=rows.map(({r,file})=>{
+      const checked=!!sel[r.order_id];
+      return { key:r.order_id, checked,
+        boxStyle:`width:18px;height:18px;flex:none;border-radius:5px;border:1.5px solid ${checked?'#c0442e':'#cdc6b6'};background:${checked?'#c0442e':'#fff'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;line-height:1;transition:all .12s`,
+        check: checked?'✓':'',
+        rowStyle:`display:flex;align-items:center;gap:12px;padding:8px 16px;border-top:1px solid #eee7d9;cursor:pointer;background:${checked?'#faf1ee':'#fff'};font-size:12px`,
+        cells:[ {v:String(r.order_id), s:"font-family:'IBM Plex Mono',monospace;width:48px;flex:none;color:#2c2a25"},
+                {v:r.customer, s:'flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'},
+                {v:r.amount, s:"font-family:'IBM Plex Mono',monospace;width:70px;flex:none;text-align:right"},
+                {v:r.status, s:'width:64px;flex:none;color:#6b675e'},
+                {v:file+'.parquet', s:"font-family:'IBM Plex Mono',monospace;width:92px;flex:none;color:#8a8578;font-size:10.5px;text-align:right"} ],
+        onToggle:()=>this.togglePick(r.order_id, file) };
+    });
+    const count=Object.keys(sel).length;
+    return { open:true, rows:list, count,
+      confirmLabel: count ? 'Delete '+count+' row'+(count===1?'':'s') : 'Select rows',
+      confirmStyle:`font-family:inherit;font-size:12px;font-weight:700;padding:9px 16px;border-radius:9px;border:1.5px solid ${count?'#c0442e':'#e2dccd'};background:${count?'#c0442e':'#f2eee4'};color:${count?'#fff':'#b0a99a'};cursor:${count?'pointer':'default'};transition:all .12s`,
+      randomN: (S.picker.n===''?'':(S.picker.n||3)), onRandomInput:this.setRandomN, liveCount:rows.length,
+      onConfirm:this.confirmDelete, onCancel:this.cancelPicker, onRandom:this.onRandomPick, stop:(e)=>e.stopPropagation() };
+  }
+
+  // ---- view model ----
+  buildQuery(){
+    const S=this.state;
+    const cols=[{v:'order_id',l:'order_id'},{v:'amount',l:'amount'},{v:'order_date',l:'order_date'}];
+    const ops=['=','>','>=','<','<='];
+    const active = !!(S.qActive && S.q && S.q.val!=='' && S.q.val!=null);
+    let scanned=0, pruned=0, matchRows=0;
+    if(active){
+      const sel=this.getSnap(S.selected); const {dfs}=this.referencedFiles(sel); const del=this.deletedSetFor(sel);
+      [...dfs].forEach(id=>{ const f=S.dataFiles[id]; if(!f) return; if(this.fileMatchesQuery(f,S.q)){ scanned++; f.records.forEach(r=>{ if(!del.has(r.order_id)&&this.rowMatches(r,S.q)) matchRows++; }); } else pruned++; });
+    }
+    const canRun = S.q.val!=='' && S.q.val!=null;
+    return { col:S.q.col, op:S.q.op, val:S.q.val, cols, ops, active, isDate:S.q.col==='order_date', isNum:S.q.col!=='order_date',
+      canRun, runDisabled:!canRun, runStyle:`font-family:inherit;font-size:11px;font-weight:700;padding:6px 13px;border-radius:8px;border:1.5px solid ${canRun?'#2f6db3':'#e2dccd'};background:${canRun?'#2f6db3':'#f2eee4'};color:${canRun?'#fff':'#b0a99a'};cursor:${canRun?'pointer':'default'};transition:box-shadow .12s`,
+      result: active ? { scanned, pruned, total:scanned+pruned, rows:matchRows } : null,
+      valPlaceholder: S.q.col==='order_date' ? '2026-02' : (S.q.col==='amount'?'500':'1050'),
+      onCol:this.setQCol, onOp:this.setQOp, onVal:this.setQVal, onRun:this.runQuery, onClear:this.clearQuery };
+  }
+
+  renderVals(){
+    const S=this.state, P=this.palette;
+    const sel=this.getSnap(S.selected);
+    const ref=this.referencedFiles(sel);
+    const selMetaV=this.metaVForSnap(S.selected);
+    const curMetaV=this.metaVForSnap(S.current);
+    const maxV=Math.max(...S.metas.map(m=>m.v));
+
+    const tableNode={ id:'table', ref:this.refFor('table'), style:this.boxStyle('table',{active:true}),
+      pill:'TABLE', pillStyle:this.pillStyle('table'), tag:'preview', tagStyle:this.tagStyle('table'),
+      name:'orders', sub:'iceberg table', note:'catalog → current metadata', onClick:()=>this.openInspect('table',null) };
+
+    const metaNodes=S.metas.map(m=>{
+      const active=m.v===selMetaV||m.v===curMetaV; const isCur=m.v===maxV;
+      return { id:'meta-v'+m.v, ref:this.refFor('meta-v'+m.v), style:this.boxStyle('meta',{active}),
+        pill:'META', pillStyle:this.pillStyle('meta'), name:'v'+m.v+'.metadata.json',
+        sub:m.snapshot?'current-snapshot → '+m.snapshot:'no snapshots yet',
+        tag:isCur?'CURRENT':null, tagStyle:this.tagStyle('meta'), onClick:()=>this.openInspect('meta','v'+m.v) };
+    });
+
+    const inspectingSnap = S.inspect && S.inspect.kind==='snapshot';
+    const snapNodes=S.snapshots.map(s=>{
+      const active=s.id===S.selected||s.id===S.current; const current=s.id===S.current;
+      const isSel=s.id===S.selected;
+      return { id:'snap-'+s.id, ref:this.refFor('snap-'+s.id), style:this.boxStyle('snapshot',{active,current}),
+        pill:'SNAP', pillStyle:this.pillStyle('snapshot'), name:s.id, sub:s.op+' · '+s.ts,
+        note:'manifest-list-'+s.id+'.avro', tag:current?'CURRENT':'seq '+s.seq, tagStyle:this.tagStyle('snapshot'),
+        hint: (isSel && !(inspectingSnap && S.inspect.id===s.id)) ? 'click again for details' : null,
+        onClick: isSel ? (()=>this.openInspect('snapshot', s.id)) : (()=>this.selectSnap(s.id)) };
+    });
+
+    const manifestNodes=Object.values(S.manifests).sort((a,b)=>a.seq-b.seq||a.id.localeCompare(b.id)).map(m=>{
+      const kind=m.kind==='delete'?'delete':'manifest'; const active=ref.mans.has(m.id);
+      return { id:'mf-'+m.id, ref:this.refFor('mf-'+m.id), style:this.boxStyle(kind,{active}),
+        pill:'AVRO', pillStyle:this.pillStyle(kind), name:m.id+'.avro', sub:m.kind==='delete'?'delete manifest':'data manifest',
+        tag:m.files.length+' entr'+(m.files.length===1?'y':'ies'), tagStyle:this.tagStyle(kind), onClick:()=>this.openInspect('manifest', m.id) };
+    });
+
+    const prunedIds=this.prunedSet();
+    const fileNodes=[];
+    Object.values(S.dataFiles).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true})).forEach(f=>{
+      const active=ref.dfs.has(f.id);
+      const pruned = !!(prunedIds && prunedIds.has(f.id));
+      const scanned = !!(prunedIds && active && !pruned);
+      fileNodes.push({ id:'df-'+f.id, ref:this.refFor('df-'+f.id), style:this.boxStyle('data',{active, pruned, scanned}),
+        pill:'PARQUET', pillStyle:this.pillStyle('data'), name:f.id+'.parquet', sub:null, meta:f.records.length+' rows · '+f.size+' MB',
+        note:null, tag: pruned?'pruned ✕':('part='+f.partition), tagStyle: pruned?this.prunedTagStyle():this.tagStyle('data'), onClick:()=>this.openInspect('data', f.id) });
+    });
+    Object.values(S.deleteFiles).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true})).forEach(f=>{
+      const active=ref.xfs.has(f.id);
+      fileNodes.push({ id:'xf-'+f.id, ref:this.refFor('xf-'+f.id), style:this.boxStyle('delete',{active}),
+        pill:'DELETE', pillStyle:this.pillStyle('delete'), name:f.id+'.parquet', sub:'deletes '+f.deletedIds.length+' rows',
+        note:'→ '+((f.targets||[f.target]).join(', ')), tag:'MoR', tagStyle:this.tagStyle('delete'), onClick:()=>this.openInspect('delete', f.id) });
+    });
+
+    const accentByOp={ append:P.data.line, delete:P.delete.line, compaction:P.manifest.line, expire:'#6b675e', evolve:P.meta.line };
+    const ls=S.lastStep;
+    const lastStep={ title:ls.title, body:ls.body, bullets:ls.bullets||[], accent:accentByOp[ls.op]||'#6b675e' };
+
+    const statCards=[
+      { value:Object.keys(S.dataFiles).length, label:'data files on disk', color:P.data.line },
+      { value:this.liveRows(S.current), label:'live rows (current)', color:P.snapshot.line },
+      { value:S.snapshots.length, label:'snapshots', color:P.snapshot.line },
+      { value:Object.keys(S.deleteFiles).length, label:'delete files', color:P.delete.line },
+      { value:Object.keys(S.manifests).length, label:'manifests', color:P.manifest.line },
+      { value:S.metas.length, label:'metadata versions', color:P.meta.line },
+      { value:S.specs.length, label:'partition specs', color:P.meta.line },
+    ];
+    const legend=[
+      { name:'Metadata', desc:'schema, snapshot list, pointer', bg:P.meta.bg, bd:P.meta.bd },
+      { name:'Snapshot', desc:'point-in-time file set', bg:P.snapshot.bg, bd:P.snapshot.bd },
+      { name:'Manifest', desc:'avro list of files', bg:P.manifest.bg, bd:P.manifest.bd },
+      { name:'Data file', desc:'parquet rows', bg:P.data.bg, bd:P.data.bd },
+      { name:'Delete file', desc:'merge-on-read deletes', bg:P.delete.bg, bd:P.delete.bd },
+    ];
+    const logNodes=S.log.map((e,i)=>({ badge:'s'+e.n, color:accentByOp[e.op]||'#6b675e', text:e.text, _k:i }));
+
+    const isViewingOld=S.selected!==S.current;
+    const viewBadge=isViewingOld?{ label:'TIME TRAVEL', bg:'#f0eafa', bd:'#c9b6e6', fg:'#7a55b8' }:{ label:'VIEWING', bg:'#e6f2ea', bd:'#a9d4bd', fg:'#2f8f5b' };
+
+    const level=S.level||'medium';
+    const showCompact=level!=='simple', showExpire=level!=='simple', showQuery=level==='advanced', showEvolve=level==='advanced';
+    const mkLevel=(key,label)=>{ const on=level===key; return { label, active:on, onClick:()=>this.onSetLevel(key), style:`font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border:none;border-radius:7px;cursor:pointer;transition:all .12s;background:${on?'#fff':'transparent'};color:${on?'#1c1b18':'#8a8578'};box-shadow:${on?'0 1px 3px rgba(30,28,22,.14)':'none'}` }; };
+    const levelOpts=[ mkLevel('simple','Simple'), mkLevel('medium','Medium'), mkLevel('advanced','Advanced') ];
+
+    return {
+      tableNode, metaNodes, snapNodes, manifestNodes, fileNodes,
+      counts:{ meta:S.metas.length, snap:S.snapshots.length, manifest:Object.keys(S.manifests).length, file:Object.keys(S.dataFiles).length+Object.keys(S.deleteFiles).length },
+      lastStep, statCards, legend, logNodes,
+      selectedLabel:S.selected, isViewingOld, viewBadge,
+      inspector:this.buildInspector(), picker:this.buildPicker(), query:this.buildQuery(), appendRows:S.appendRows||3,
+      currentSpec:this.specDefs[S.specId||0].label,
+      level, showCompact, showExpire, showQuery, showEvolve, levelOpts,
+      svgRef:this.svgRef, innerRef:this.innerRef,
+      onAppend:this.onAppend, onDelete:this.onDelete, onCompact:this.onCompact, onExpire:this.onExpire, onEvolve:this.onEvolve, onReset:this.onReset, onJumpCurrent:this.onJumpCurrent,
+      onRowsInc:this.onRowsInc, onRowsDec:this.onRowsDec, onRowsInput:this.onRowsInput,
+    };
+  }
+}
+</script>
+</body>
+</html>
