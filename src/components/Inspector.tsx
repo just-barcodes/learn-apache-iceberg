@@ -40,6 +40,7 @@ export function Inspector({ state, dispatch }: Props) {
             jsonText={m.jsonText}
             summary={m.summary}
             deletedList={m.deletedList}
+            showRaw={m.showRaw}
             dispatch={dispatch}
           />
         ) : null}
@@ -183,20 +184,22 @@ function JsonView({
   jsonText,
   summary,
   deletedList,
+  showRaw,
   dispatch,
 }: {
   caption: string;
   jsonText: string;
   summary: Summary | null;
   deletedList: string | null;
+  showRaw: boolean;
   dispatch: (action: Action) => void;
 }) {
   return (
     <>
       <SummarySection summary={summary} dispatch={dispatch} />
-      {summary ? <div className="inspector-section">Raw file</div> : null}
-      <div className="inspector-caption">{caption}</div>
-      <pre className="json">{jsonText}</pre>
+      {summary && showRaw ? <div className="inspector-section">Raw file</div> : null}
+      {showRaw || !summary ? <div className="inspector-caption">{caption}</div> : null}
+      {showRaw ? <pre className="json">{jsonText}</pre> : null}
       {deletedList ? (
         <div className="inspector-deleted">
           Removes order_id → <span className="inspector-deleted__ids">{deletedList}</span>
