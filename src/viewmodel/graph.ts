@@ -183,6 +183,25 @@ export function computeEdges(state: TableState): Edge[] {
   const sel = getSnap(state, state.selected);
   if (!sel) return [];
   const edges: Edge[] = [];
+
+  // Simple hides the metadata + manifest columns, so wire catalog → snapshot → files
+  // directly for the "a snapshot points at a set of files" mental model.
+  if (state.level === "simple") {
+    edges.push({ from: "table", to: "snap-" + state.selected, colorVar: LINE_VAR.snapshot });
+    for (const mid of sel.manifests) {
+      const m = state.manifests[mid];
+      if (!m) continue;
+      const colorVar = m.kind === "delete" ? LINE_VAR.delete : LINE_VAR.data;
+      for (const f of m.files) {
+        edges.push({ from: "snap-" + state.selected, to: (m.kind === "delete" ? "xf-" : "df-") + f, colorVar });
+      }
+    }
+    if (state.current !== state.selected) {
+      edges.push({ from: "table", to: "snap-" + state.current, colorVar: LINE_VAR.snapshot, dash: true });
+    }
+    return edges;
+  }
+
   const pruned = prunedSet(state);
   const selMeta = metaVForSnap(state, state.selected);
   if (selMeta != null) {

@@ -29,6 +29,8 @@ export function GraphCanvas({ state, dispatch, themeKey }: Props) {
   );
 
   const g = useMemo(() => buildGraph(state), [state]);
+  // Simple hides the internal metadata + manifest layers to teach the core model first.
+  const showLayers = state.level !== "simple";
 
   return (
     <div className="graph-scroll">
@@ -38,21 +40,25 @@ export function GraphCanvas({ state, dispatch, themeKey }: Props) {
           <GraphColumn title="Catalog">
             <GraphNode node={g.tableNode} dispatch={dispatch} />
           </GraphColumn>
-          <GraphColumn title="Metadata" count={g.counts.meta}>
-            {g.metaNodes.map((n) => (
-              <GraphNode key={n.id} node={n} dispatch={dispatch} />
-            ))}
-          </GraphColumn>
+          {showLayers ? (
+            <GraphColumn title="Metadata" count={g.counts.meta}>
+              {g.metaNodes.map((n) => (
+                <GraphNode key={n.id} node={n} dispatch={dispatch} />
+              ))}
+            </GraphColumn>
+          ) : null}
           <GraphColumn title="Snapshots" count={g.counts.snap}>
             {g.snapNodes.map((n) => (
               <GraphNode key={n.id} node={n} dispatch={dispatch} />
             ))}
           </GraphColumn>
-          <GraphColumn title="Manifests" count={g.counts.manifest}>
-            {g.manifestNodes.map((n) => (
-              <GraphNode key={n.id} node={n} dispatch={dispatch} />
-            ))}
-          </GraphColumn>
+          {showLayers ? (
+            <GraphColumn title="Manifests" count={g.counts.manifest}>
+              {g.manifestNodes.map((n) => (
+                <GraphNode key={n.id} node={n} dispatch={dispatch} />
+              ))}
+            </GraphColumn>
+          ) : null}
           <GraphColumn title="Data & delete files" count={g.counts.file}>
             {g.fileNodes.map((n) => (
               <GraphNode key={n.id} node={n} dispatch={dispatch} />

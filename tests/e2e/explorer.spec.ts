@@ -82,6 +82,22 @@ test("column min/max stats appear in manifest details only at the advanced level
   await expect(modal.locator(".entry__stats").first()).toContainText("order_id min 1001 max 1003");
 });
 
+test("simple mode hides the metadata + manifest layers and trims the panel", async ({ page }) => {
+  const columns = page.locator(".graph-col__head");
+  // Default (medium): all five columns.
+  await expect(columns).toHaveCount(5);
+
+  await page.locator(".segmented__btn", { hasText: "Simple" }).click();
+  await expect(columns).toHaveCount(3);
+  await expect(columns.nth(0)).toContainText("Catalog");
+  await expect(columns.nth(1)).toContainText("Snapshots");
+  await expect(columns.nth(2)).toContainText("Data & delete files");
+  // Panel trims: fewer stat cards and no metadata/manifest legend entries.
+  await expect(page.locator(".stat")).toHaveCount(4);
+  await expect(page.locator(".legend__text", { hasText: "Metadata" })).toHaveCount(0);
+  await expect(page.locator(".legend__text", { hasText: "Manifest" })).toHaveCount(0);
+});
+
 test("the query planner prunes files whose stats cannot match", async ({ page }) => {
   await page.locator(".segmented__btn", { hasText: "Advanced" }).click();
   await page.locator(".query__select").first().selectOption("order_id");

@@ -46,11 +46,20 @@ export interface LegendEntry {
   desc: string;
 }
 
-/** Static legend for the five entity kinds. */
-export const LEGEND: LegendEntry[] = [
-  { kind: "meta", name: "Metadata", desc: "schema, snapshot list, pointer" },
-  { kind: "snapshot", name: "Snapshot", desc: "point-in-time file set" },
-  { kind: "manifest", name: "Manifest", desc: "avro list of files" },
-  { kind: "data", name: "Data file", desc: "parquet rows" },
-  { kind: "delete", name: "Delete file", desc: "merge-on-read deletes" },
+interface LegendDef extends LegendEntry {
+  /** Lowest detail level at which this entry's concept is on screen. */
+  min: DetailLevel;
+}
+
+const LEGEND_DEFS: LegendDef[] = [
+  { kind: "meta", name: "Metadata", desc: "schema, snapshot list, pointer", min: "medium" },
+  { kind: "snapshot", name: "Snapshot", desc: "point-in-time file set", min: "simple" },
+  { kind: "manifest", name: "Manifest", desc: "avro list of files", min: "medium" },
+  { kind: "data", name: "Data file", desc: "parquet rows", min: "simple" },
+  { kind: "delete", name: "Delete file", desc: "merge-on-read deletes", min: "simple" },
 ];
+
+/** Legend entries for the concepts actually visible at the given detail level. */
+export function legendFor(level: DetailLevel): LegendEntry[] {
+  return LEGEND_DEFS.filter((l) => atLeast(level, l.min)).map(({ min, ...entry }) => entry);
+}

@@ -1,12 +1,17 @@
-import { LEGEND } from "../../viewmodel/panels";
+import type { DetailLevel } from "../../domain/types";
+import { legendFor } from "../../viewmodel/panels";
 
-/** Colour key for the five entity kinds plus the time-travel current pointer. */
-export function Legend() {
+interface Props {
+  level: DetailLevel;
+}
+
+/** Colour key for the entity kinds visible at this level, plus the time-travel pointer. */
+export function Legend({ level }: Props) {
   return (
     <div className="panel-card">
       <div className="panel-card__head">Legend</div>
       <div className="legend">
-        {LEGEND.map((l) => (
+        {legendFor(level).map((l) => (
           <div key={l.kind} className="legend__row">
             <span className={`legend__swatch node--${l.kind}`} />
             <span className="legend__text">

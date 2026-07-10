@@ -14,7 +14,7 @@ export function SidePanel({ state }: Props) {
     <aside className="sidepanel">
       <WhatHappened lastStep={state.lastStep} level={state.level} />
       <StatGrid state={state} />
-      <Legend />
+      <Legend level={state.level} />
       <CommitLog log={state.log} />
     </aside>
   );
