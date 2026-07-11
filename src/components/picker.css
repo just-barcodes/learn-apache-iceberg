@@ -1,5 +1,5 @@
 .picker__cols {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 12px;
   padding: 7px 16px;
@@ -17,26 +17,13 @@
   width: 18px;
   flex: none;
 }
-.picker__id-col {
-  width: 48px;
-  flex: none;
-}
-.picker__customer-col {
-  flex: 1;
+.picker__cell {
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.picker__amount-col {
-  width: 70px;
-  flex: none;
-  text-align: right;
-}
-.picker__status-col {
-  width: 64px;
-  flex: none;
-}
-.picker__file-col {
-  width: 92px;
-  flex: none;
+.picker__cell--right {
   text-align: right;
 }
 
@@ -46,7 +33,7 @@
   min-height: 0;
 }
 .picker__row {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
@@ -80,14 +67,6 @@
 
 .picker__mono {
   font-family: var(--font-mono);
-}
-.picker__ellipsis {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.picker__muted {
-  color: var(--text-muted);
 }
 .picker__file {
   font-family: var(--font-mono);

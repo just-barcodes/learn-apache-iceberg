@@ -16,8 +16,16 @@ export function DeletePicker({ state, dispatch }: Props) {
   const cancel = () => dispatch({ type: "cancelPicker" });
   const canDelete = model.count > 0;
 
+  // A leading checkbox, one grid track per schema column (mono/numeric sized to
+  // content, text columns sharing the rest), then a fixed file column.
+  const template = [
+    "18px",
+    ...model.cols.map((c) => (c.align === "right" ? "max-content" : "minmax(0, 1fr)")),
+    "92px",
+  ].join(" ");
+
   return (
-    <Modal onClose={cancel} width={560}>
+    <Modal onClose={cancel} width={640}>
       <div className="modal-head">
         <span className="pill node--delete">DELETE</span>
         <div className="modal-head__titles">
@@ -31,13 +39,14 @@ export function DeletePicker({ state, dispatch }: Props) {
         </button>
       </div>
 
-      <div className="picker__cols">
+      <div className="picker__cols" style={{ gridTemplateColumns: template }}>
         <span className="picker__check-col" />
-        <span className="picker__id-col">id</span>
-        <span className="picker__customer-col">customer</span>
-        <span className="picker__amount-col">amount</span>
-        <span className="picker__status-col">status</span>
-        <span className="picker__file-col">file</span>
+        {model.cols.map((c) => (
+          <span key={c.label} className={"picker__cell picker__cell--" + c.align}>
+            {c.label}
+          </span>
+        ))}
+        <span className="picker__cell picker__cell--right">file</span>
       </div>
 
       <div className="picker__rows">
@@ -45,14 +54,21 @@ export function DeletePicker({ state, dispatch }: Props) {
           <div
             key={r.oid}
             className={"picker__row" + (r.checked ? " is-checked" : "")}
+            style={{ gridTemplateColumns: template }}
             onClick={() => dispatch({ type: "togglePick", oid: r.oid, file: r.file })}
           >
             <span className="picker__box">{r.checked ? "✓" : ""}</span>
-            <span className="picker__id-col picker__mono">{r.oid}</span>
-            <span className="picker__customer-col picker__ellipsis">{r.customer}</span>
-            <span className="picker__amount-col picker__mono">{r.amount}</span>
-            <span className="picker__status-col picker__muted">{r.status}</span>
-            <span className="picker__file-col picker__file">{r.file}.parquet</span>
+            {r.cells.map((cell, i) => (
+              <span
+                key={i}
+                className={
+                  "picker__cell picker__cell--" + cell.align + (cell.mono ? " picker__mono" : "")
+                }
+              >
+                {cell.value}
+              </span>
+            ))}
+            <span className="picker__cell picker__cell--right picker__file">{r.file}.parquet</span>
           </div>
         ))}
       </div>

@@ -125,6 +125,22 @@ test("schema evolution adds a column that old files read back as null", async ({
   await expect(modal.locator(".grid tbody tr").first().locator("td").last()).toHaveText("null");
 });
 
+test("the delete picker follows the current schema", async ({ page }) => {
+  await page.locator(".segmented__btn", { hasText: "Advanced" }).click();
+  // Evolve twice: add region (schema 1), then rename customer -> customer_name (schema 2).
+  const evolve = page.locator(".action", { hasText: "Evolve schema" });
+  await evolve.click();
+  await evolve.click();
+
+  await page.locator(".action", { hasText: "Delete rows" }).click();
+  const header = page.locator(".picker__cols");
+  await expect(header).toContainText("customer_name");
+  await expect(header).not.toContainText(/\bcustomer\b/); // renamed away from the old label
+  await expect(header).toContainText("region");
+  // Rows come from files written under schema 0, so region backfills as null.
+  await expect(page.locator(".picker__row").first()).toContainText("null");
+});
+
 test("the theme toggle flips light and dark", async ({ page }) => {
   const html = page.locator("html");
   await page.locator(".theme-toggle").click();
