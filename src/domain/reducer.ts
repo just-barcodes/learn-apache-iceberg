@@ -13,6 +13,7 @@ export type Action =
   | { type: "compact" }
   | { type: "expire" }
   | { type: "evolve" }
+  | { type: "evolveSchema" }
   | { type: "reset" }
   | { type: "setLevel"; level: DetailLevel }
   | { type: "jumpCurrent" }
@@ -50,6 +51,8 @@ export function reducer(state: TableState, action: Action): TableState {
       return ops.expire(state);
     case "evolve":
       return ops.evolve(state);
+    case "evolveSchema":
+      return ops.evolveSchema(state);
     case "reset":
       return ops.reset(state);
     case "setLevel":

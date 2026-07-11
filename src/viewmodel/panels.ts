@@ -71,6 +71,12 @@ export function buildStats(state: TableState): StatCard[] {
       colorVar: "var(--meta-line)",
       min: "advanced",
     },
+    {
+      value: state.schemas.length,
+      label: "schema versions",
+      colorVar: "var(--meta-line)",
+      min: "advanced",
+    },
   ];
   return defs.filter((d) => atLeast(state.level, d.min)).map(({ min, ...card }) => card);
 }

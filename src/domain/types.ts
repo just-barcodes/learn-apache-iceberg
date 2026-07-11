@@ -3,13 +3,19 @@
 /** The operations a commit can represent. `evolve` writes metadata only. */
 export type Operation = "append" | "delete" | "compaction" | "expire" | "evolve";
 
-/** A single row in the `orders` table. `amount` is a display string like "CHF 197.07". */
+/**
+ * A single row in the `orders` table. `amount` is a display string like "CHF 197.07".
+ * The record carries the superset of every column any schema version ever defines;
+ * which of them are visible (and under what name) is decided by the active schema
+ * when the row is projected (see schemas.ts).
+ */
 export interface OrderRecord {
   order_id: number;
   customer: string;
   amount: string;
   order_date: string;
   status: string;
+  region: string;
 }
 
 /** The queryable columns and their comparison operators used by the query planner. */
@@ -33,6 +39,8 @@ export interface DataFile {
   size: number;
   partition: string;
   specId: number;
+  /** The schema version this file was written under (see schemas.ts). */
+  schemaId: number;
   born: number;
   /** Column stats recorded when the file was written (see DataFileBounds). */
   bounds: DataFileBounds;
@@ -72,6 +80,8 @@ export interface Snapshot {
   ts: string;
   parent: string | null;
   manifests: string[];
+  /** The schema version that was current when this snapshot was committed. */
+  schemaId: number;
 }
 
 /** A root metadata version: schema, partition spec, and current-snapshot pointer. */
@@ -79,6 +89,8 @@ export interface MetaVersion {
   v: number;
   snapshot: string | null;
   specId: number;
+  /** The current-schema-id this metadata version records. */
+  schemaId: number;
 }
 
 /** A partition-spec definition available to the table. */
@@ -156,6 +168,10 @@ export interface TableState {
   specs: number[];
   /** The currently-active partition-spec id. */
   specId: number;
+  /** Schema-version ids the table has ever used. */
+  schemas: number[];
+  /** The currently-active schema-version id. */
+  schemaId: number;
   q: Query;
   qActive: boolean;
   level: DetailLevel;

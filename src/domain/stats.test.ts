@@ -18,6 +18,7 @@ describe("computeBounds", () => {
         amount: "CHF 197.07",
         order_date: "2026-01-03",
         status: "paid",
+        region: "EMEA",
       },
       {
         order_id: 1003,
@@ -25,6 +26,7 @@ describe("computeBounds", () => {
         amount: "CHF 271.21",
         order_date: "2026-01-05",
         status: "paid",
+        region: "EMEA",
       },
     ];
     expect(computeBounds(records)).toEqual({

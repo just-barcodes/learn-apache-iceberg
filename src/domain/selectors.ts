@@ -70,6 +70,33 @@ export function liveRows(state: TableState, snapId: string): number {
   return liveRecords(state, snapId).live.length;
 }
 
+/** A materialized row tagged with the schema version of the data file it came from. */
+export interface TaggedRecord {
+  rec: OrderRecord;
+  schemaId: number;
+}
+
+/** Like liveRecords, but keeps each row's source-file schema for field-id resolution. */
+export function liveRecordsTagged(
+  state: TableState,
+  snapId: string,
+): { live: TaggedRecord[]; deleted: TaggedRecord[] } {
+  const snap = getSnap(state, snapId);
+  const { dfs } = referencedFiles(state, snap);
+  const del = deletedSetFor(state, snap);
+  const live: TaggedRecord[] = [];
+  const deleted: TaggedRecord[] = [];
+  dfs.forEach((id) => {
+    const df = state.dataFiles[id];
+    if (!df) return;
+    for (const r of df.records) {
+      const tagged = { rec: r, schemaId: df.schemaId };
+      (del.has(r.order_id) ? deleted : live).push(tagged);
+    }
+  });
+  return { live, deleted };
+}
+
 /** The highest metadata version whose current-snapshot pointer is this snapshot. */
 export function metaVForSnap(state: TableState, snapId: string | null): number | undefined {
   const ms = state.metas.filter((m) => m.snapshot === snapId);

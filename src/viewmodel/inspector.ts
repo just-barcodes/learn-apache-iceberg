@@ -1,7 +1,15 @@
 import { snapNum, tsMs } from "../domain/ids";
-import { getSnap, liveRecords, liveRows, metaVForSnap, referencedFiles } from "../domain/selectors";
-import { ORDER_COLS, SPEC_DEFS, TABLE_UUID } from "../domain/specs";
-import type { DataFile, DataFileBounds, NodeKind, OrderRecord, TableState } from "../domain/types";
+import {
+  getSnap,
+  liveRecordsTagged,
+  liveRows,
+  metaVForSnap,
+  referencedFiles,
+  type TaggedRecord,
+} from "../domain/selectors";
+import { fieldInSchema, SCHEMA_DEFS, type SchemaField } from "../domain/schemas";
+import { SPEC_DEFS, TABLE_UUID } from "../domain/specs";
+import type { DataFile, DataFileBounds, NodeKind, TableState } from "../domain/types";
 
 type Align = "left" | "right";
 
@@ -75,7 +83,23 @@ export type InspectorModel =
       showRaw: boolean;
     });
 
-const cols: GridColumn[] = ORDER_COLS.map((c) => ({ label: c.label, align: c.align }));
+/** Grid header columns for a schema version's fields, in order. */
+function gridCols(fields: SchemaField[]): GridColumn[] {
+  return fields.map((f) => ({ label: f.name, align: f.align }));
+}
+
+/**
+ * Project one record through the active schema. A field the record's source file
+ * predates (added in a later schema) reads back as "null" — Iceberg resolves files
+ * against the current schema by stable field id, backfilling absent columns.
+ */
+function projectCells(rec: TaggedRecord, fields: SchemaField[]): GridCell[] {
+  return fields.map((f) => ({
+    value: fieldInSchema(f.id, rec.schemaId) ? String(rec.rec[f.key]) : "null",
+    align: f.align,
+    mono: f.mono,
+  }));
+}
 
 /** Render stored per-column bounds using the app's "col min X max Y" convention. */
 function formatBounds(b: DataFileBounds): string {
@@ -95,18 +119,18 @@ function formatBounds(b: DataFileBounds): string {
   );
 }
 
-/** Sort records by id and mark rows present in `deletedSet` as struck-through. */
-function gridRows(records: OrderRecord[], deletedSet: Set<number> | null): GridRow[] {
+/** Sort tagged records by id, project them through `fields`, and mark deleted rows. */
+function gridRows(
+  records: TaggedRecord[],
+  deletedSet: Set<number> | null,
+  fields: SchemaField[],
+): GridRow[] {
   return records
     .slice()
-    .sort((a, b) => a.order_id - b.order_id)
+    .sort((a, b) => a.rec.order_id - b.rec.order_id)
     .map((r) => ({
-      deleted: !!(deletedSet && deletedSet.has(r.order_id)),
-      cells: ORDER_COLS.map((c) => ({
-        value: String(r[c.key]),
-        align: c.align,
-        mono: c.mono,
-      })),
+      deleted: !!(deletedSet && deletedSet.has(r.rec.order_id)),
+      cells: projectCells(r, fields),
     }));
 }
 
@@ -118,11 +142,14 @@ export function buildInspector(state: TableState): InspectorModel {
   // Avro / delete-file JSON. Lower levels get the conceptual summary instead.
   const advanced = state.level === "advanced";
   const simple = state.level === "simple";
+  // Grids project through the table's current schema (schema-on-read).
+  const fields = SCHEMA_DEFS[state.schemaId].fields;
+  const cols = gridCols(fields);
 
   if (kind === "table") {
-    const { live, deleted } = liveRecords(state, state.selected);
+    const { live, deleted } = liveRecordsTagged(state, state.selected);
     const all = [...live, ...deleted];
-    const dset = new Set(deleted.map((r) => r.order_id));
+    const dset = new Set(deleted.map((r) => r.rec.order_id));
     const dfCount = referencedFiles(state, getSnap(state, state.selected)).dfs.size;
     return {
       open: true,
@@ -132,7 +159,7 @@ export function buildInspector(state: TableState): InspectorModel {
       subtitle: "materialized table @ " + state.selected,
       view: "grid",
       cols,
-      rows: gridRows(all, dset),
+      rows: gridRows(all, dset, fields),
       caption: deleted.length
         ? live.length +
           " live rows. " +
@@ -182,7 +209,7 @@ export function buildInspector(state: TableState): InspectorModel {
             "-1-" +
             TABLE_UUID +
             ".avro",
-          "schema-id": 0,
+          "schema-id": s.schemaId,
         };
       });
     const obj = {
@@ -190,21 +217,18 @@ export function buildInspector(state: TableState): InspectorModel {
       "table-uuid": TABLE_UUID,
       location: "s3://warehouse/db/orders",
       "last-updated-ms": tsMs(uptoSeq),
-      "last-column-id": 5,
-      "current-schema-id": 0,
-      schemas: [
-        {
-          type: "struct",
-          "schema-id": 0,
-          fields: [
-            { id: 1, name: "order_id", required: true, type: "long" },
-            { id: 2, name: "customer", required: false, type: "string" },
-            { id: 3, name: "amount", required: false, type: "decimal(10,2)" },
-            { id: 4, name: "order_date", required: false, type: "string" },
-            { id: 5, name: "status", required: false, type: "string" },
-          ],
-        },
-      ],
+      "last-column-id": SCHEMA_DEFS[meta.schemaId].lastColumnId,
+      "current-schema-id": meta.schemaId,
+      schemas: SCHEMA_DEFS.slice(0, meta.schemaId + 1).map((def, sid) => ({
+        type: "struct",
+        "schema-id": sid,
+        fields: def.fields.map((f) => ({
+          id: f.id,
+          name: f.name,
+          required: f.required,
+          type: f.type,
+        })),
+      })),
       "default-spec-id": meta.specId || 0,
       "partition-specs": state.specs.map((idx) => {
         const d = SPEC_DEFS[idx];
@@ -237,7 +261,8 @@ export function buildInspector(state: TableState): InspectorModel {
       summary: {
         facts: [
           { k: "format", v: "v2" },
-          { k: "columns", v: 5 },
+          { k: "schema", v: "v" + meta.schemaId },
+          { k: "columns", v: SCHEMA_DEFS[meta.schemaId].fields.length },
           { k: "spec", v: SPEC_DEFS[meta.specId || 0].label },
           { k: "snapshots", v: snaps.length },
           { k: "current", v: meta.snapshot || "none" },
@@ -447,6 +472,8 @@ export function buildInspector(state: TableState): InspectorModel {
   if (kind === "data") {
     const f = id ? state.dataFiles[id] : undefined;
     if (!f) return { open: false };
+    const tagged = f.records.map((r) => ({ rec: r, schemaId: f.schemaId }));
+    const olderSchema = f.schemaId < state.schemaId;
     return {
       open: true,
       pillKind: "data",
@@ -460,12 +487,17 @@ export function buildInspector(state: TableState): InspectorModel {
         f.partition +
         " · " +
         SPEC_DEFS[f.specId || 0].label +
+        " · schema-v" +
+        f.schemaId +
         (f.compacted ? " · compacted" : ""),
       view: "grid",
       cols,
-      rows: gridRows(f.records, null),
-      caption:
-        "Raw contents of this immutable data file. Deletes are never applied inside the file; they live in separate delete files and are merged at read time.",
+      rows: gridRows(tagged, null, fields),
+      caption: olderSchema
+        ? "This file was written under schema-v" +
+          f.schemaId +
+          ", before the table's current schema. It is never rewritten: readers resolve it by field id, so columns added since read back as null and a rename just relabels the same column."
+        : "Raw contents of this immutable data file. Deletes are never applied inside the file; they live in separate delete files and are merged at read time.",
       stats: advanced
         ? "column stats · order_id min " +
           f.bounds.lower.order_id +

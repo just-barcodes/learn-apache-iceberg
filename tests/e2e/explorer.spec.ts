@@ -108,6 +108,23 @@ test("the query planner prunes files whose stats cannot match", async ({ page })
   await expect(page.locator(".query__result")).toContainText("1 pruned");
 });
 
+test("schema evolution adds a column that old files read back as null", async ({ page }) => {
+  await page.locator(".segmented__btn", { hasText: "Advanced" }).click();
+  expect(await stat(page, "schema versions")).toBe(1);
+
+  // Evolve the schema: adds the `region` column (metadata-only, no new snapshot).
+  await page.locator(".action", { hasText: "Evolve schema" }).click();
+  expect(await stat(page, "schema versions")).toBe(2);
+  await expect(page.locator(".view-badge__value")).toHaveText("s1"); // pointer unchanged
+
+  // d1 was written under the old schema, so region backfills as null via field id.
+  await page.locator(".node--data", { hasText: "d1.parquet" }).click();
+  const modal = page.locator(".modal-panel");
+  await expect(modal.locator(".modal-head__title")).toHaveText("d1.parquet");
+  await expect(modal.locator(".grid__th", { hasText: "region" })).toBeVisible();
+  await expect(modal.locator(".grid tbody tr").first().locator("td").last()).toHaveText("null");
+});
+
 test("the theme toggle flips light and dark", async ({ page }) => {
   const html = page.locator("html");
   await page.locator(".theme-toggle").click();

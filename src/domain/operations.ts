@@ -2,6 +2,7 @@ import { clock } from "./ids";
 import { initialState } from "./initialState";
 import { genRecords, type GenOptions, type OrderIdCounter } from "./records";
 import { deletedSetFor, getSnap, liveRecords, referencedFiles } from "./selectors";
+import { SCHEMA_DEFS } from "./schemas";
 import { SPEC_DEFS } from "./specs";
 import { computeBounds } from "./stats";
 import type {
@@ -65,6 +66,7 @@ export function append(s: TableState): TableState {
       size: Math.max(1, cnt),
       partition: pv,
       specId,
+      schemaId: s.schemaId,
       born: c.s,
       bounds: computeBounds(records),
     };
@@ -85,6 +87,7 @@ export function append(s: TableState): TableState {
     ts: clock(c.s),
     parent: parent ? parent.id : null,
     manifests: manList,
+    schemaId: s.schemaId,
   };
   return {
     ...s,
@@ -92,7 +95,7 @@ export function append(s: TableState): TableState {
     dataFiles,
     manifests,
     snapshots: [...s.snapshots, snap],
-    metas: [...s.metas, { v, snapshot: sid, specId }],
+    metas: [...s.metas, { v, snapshot: sid, specId, schemaId: s.schemaId }],
     current: sid,
     selected: sid,
     log: [
@@ -224,6 +227,7 @@ export function confirmDelete(s: TableState): TableState {
     ts: clock(c.s),
     parent: cur.id,
     manifests: manList,
+    schemaId: s.schemaId,
   };
   return {
     ...s,
@@ -232,7 +236,7 @@ export function confirmDelete(s: TableState): TableState {
     deleteFiles,
     manifests,
     snapshots: [...s.snapshots, snap],
-    metas: [...s.metas, { v, snapshot: sid, specId: s.specId || 0 }],
+    metas: [...s.metas, { v, snapshot: sid, specId: s.specId || 0, schemaId: s.schemaId }],
     current: sid,
     selected: sid,
     log: [
@@ -311,6 +315,7 @@ export function compact(s: TableState): TableState {
       size: totalSize,
       partition: "compacted",
       specId: s.specId || 0,
+      schemaId: s.schemaId,
       born: c.s,
       bounds: computeBounds(compactedRecords),
       compacted: true,
@@ -329,6 +334,7 @@ export function compact(s: TableState): TableState {
     ts: clock(c.s),
     parent: cur.id,
     manifests: [mid],
+    schemaId: s.schemaId,
   };
   return {
     ...s,
@@ -336,7 +342,7 @@ export function compact(s: TableState): TableState {
     dataFiles,
     manifests,
     snapshots: [...s.snapshots, snap],
-    metas: [...s.metas, { v, snapshot: sid, specId: s.specId || 0 }],
+    metas: [...s.metas, { v, snapshot: sid, specId: s.specId || 0, schemaId: s.schemaId }],
     current: sid,
     selected: sid,
     log: [
@@ -462,7 +468,7 @@ export function evolve(s: TableState): TableState {
     specId: next,
     specs,
     counters: c,
-    metas: [...s.metas, { v, snapshot: s.current, specId: next }],
+    metas: [...s.metas, { v, snapshot: s.current, specId: next, schemaId: s.schemaId }],
     log: [
       {
         n: getSnap(s, s.current)?.seq ?? 0,
@@ -490,6 +496,58 @@ export function evolve(s: TableState): TableState {
         "metadata bumped to v" + v + ", current-snapshot pointer unchanged",
         "existing data files keep their original spec",
         "append now to see files written under the new spec",
+      ],
+    },
+  };
+}
+
+// ---- schema evolution (metadata-only) -----------------------------------
+
+export function evolveSchema(s: TableState): TableState {
+  const next = (s.schemaId || 0) + 1;
+  if (next >= SCHEMA_DEFS.length) {
+    return {
+      ...s,
+      lastStep: {
+        op: "evolve",
+        title: "Already at the latest schema",
+        body: "Every schema change in this demo has been applied. Field ids are never reused, so a dropped column cannot come back — reset the table to start the sequence over.",
+        bullets: [],
+      },
+    };
+  }
+  const schemas = s.schemas.includes(next) ? s.schemas : [...s.schemas, next];
+  const c = { ...s.counters };
+  c.v++;
+  const v = c.v;
+  const def = SCHEMA_DEFS[next];
+  return {
+    ...s,
+    schemaId: next,
+    schemas,
+    counters: c,
+    metas: [...s.metas, { v, snapshot: s.current, specId: s.specId || 0, schemaId: next }],
+    log: [
+      {
+        n: getSnap(s, s.current)?.seq ?? 0,
+        op: "evolve",
+        text:
+          "Evolved schema → " + def.change.text + "; wrote metadata v" + v + " (no new snapshot).",
+      },
+      ...s.log,
+    ],
+    lastStep: {
+      op: "evolve",
+      title: "Schema evolution → schema-" + next,
+      body:
+        "Changing the schema is a metadata-only operation — no data is rewritten and no snapshot is created. A new metadata version records the new schema (last-column-id " +
+        def.lastColumnId +
+        "). Iceberg tracks columns by a stable field id, so readers resolve old files against the new schema: columns added later read back as null, dropped columns are ignored, and a rename is invisible to the data.",
+      bullets: [
+        def.change.text,
+        "metadata bumped to v" + v + ", current-snapshot pointer unchanged",
+        "existing data files are untouched; they resolve by field id at read time",
+        "append now to write files under schema-" + next,
       ],
     },
   };

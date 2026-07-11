@@ -2,9 +2,9 @@
 
 An interactive visualization of what happens _inside_ an Apache Iceberg table as
 you run commits. Append, delete (merge-on-read), compact, expire snapshots,
-evolve the partition spec, and run a query planner, then watch how the metadata
-and data files rewire. Click any node to inspect it; click a snapshot to
-time-travel. Supports light and dark mode.
+evolve the partition spec, evolve the schema, and run a query planner, then watch
+how the metadata and data files rewire. Click any node to inspect it; click a
+snapshot to time-travel. Supports light and dark mode.
 
 **Live demo:** https://just-barcodes.github.io/learn-apache-iceberg/
 
@@ -22,7 +22,8 @@ so each level teaches one layer:
 - **Medium** — reveals how the pointer is stored: the metadata and manifest
   columns, Compact/Expire, and more panel detail.
 - **Advanced** — the physical/optimization layer: the query planner, partition
-  evolution, per-column min/max stats, and raw metadata/Avro JSON.
+  evolution, schema evolution (add/rename/drop/widen columns, resolved by stable
+  field id), per-column min/max stats, and raw metadata/Avro JSON.
 
 ## Getting started
 
@@ -54,6 +55,7 @@ src/
     types.ts          The TableState shape and its parts
     records.ts        Deterministic order-record generation
     ids.ts, specs.ts  Stable ids/timestamps and partition specs
+    schemas.ts        Schema versions + field-id resolution rules
     initialState.ts   The table's starting point (snapshot s1)
     selectors.ts      Derived reads: referenced files, deleted set, live rows
     stats.ts          Per-column min/max bounds, computed at write time
@@ -75,8 +77,8 @@ src/
 
 A `TableState` holds the `metas`, `snapshots`, `manifests`, `dataFiles`, and
 `deleteFiles` that make up the table, plus the current/selected snapshot and UI
-state. Every commit (`append`, `confirmDelete`, `compact`, `expire`, `evolve`)
-is a pure function `TableState → TableState`, dispatched through a reducer. The
+state. Every commit (`append`, `confirmDelete`, `compact`, `expire`, `evolve`,
+`evolveSchema`) is a pure function `TableState → TableState`, dispatched through a reducer. The
 UI is a pure projection of this state.
 
 ### Theming

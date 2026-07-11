@@ -13,10 +13,20 @@ export function initialState(): TableState {
   const d2 = genRecords(3, { month: "2026-01" }, ctr);
   return {
     metas: [
-      { v: 1, snapshot: null, specId: 0 },
-      { v: 2, snapshot: "s1", specId: 0 },
+      { v: 1, snapshot: null, specId: 0, schemaId: 0 },
+      { v: 2, snapshot: "s1", specId: 0, schemaId: 0 },
     ],
-    snapshots: [{ id: "s1", seq: 1, op: "append", ts: clock(1), parent: null, manifests: ["m1"] }],
+    snapshots: [
+      {
+        id: "s1",
+        seq: 1,
+        op: "append",
+        ts: clock(1),
+        parent: null,
+        manifests: ["m1"],
+        schemaId: 0,
+      },
+    ],
     manifests: { m1: { id: "m1", kind: "data", files: ["d1", "d2"], op: "append", seq: 1 } },
     dataFiles: {
       d1: {
@@ -25,6 +35,7 @@ export function initialState(): TableState {
         size: 4,
         partition: "2026-01",
         specId: 0,
+        schemaId: 0,
         born: 1,
         bounds: computeBounds(d1),
       },
@@ -34,6 +45,7 @@ export function initialState(): TableState {
         size: 4,
         partition: "2026-01",
         specId: 0,
+        schemaId: 0,
         born: 1,
         bounds: computeBounds(d2),
       },
@@ -46,6 +58,8 @@ export function initialState(): TableState {
     appendRows: 6,
     specs: [0],
     specId: 0,
+    schemas: [0],
+    schemaId: 0,
     q: { col: "amount", op: ">=", val: "" },
     qActive: false,
     level: "medium",

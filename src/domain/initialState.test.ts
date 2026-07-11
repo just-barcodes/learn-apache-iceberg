@@ -34,6 +34,7 @@ describe("initialState", () => {
       amount: "CHF 1.00",
       order_date: "2026-01-01",
       status: "paid",
+      region: "EMEA",
     });
     expect(b.dataFiles.d1.records).toHaveLength(3);
   });

@@ -100,6 +100,36 @@ describe("partition evolution", () => {
   });
 });
 
+describe("schema evolution", () => {
+  it("adds a schema version via metadata only, without a new snapshot", () => {
+    const s = reducer(initialState(), { type: "evolveSchema" });
+    expect(s.schemaId).toBe(1);
+    expect(s.schemas).toEqual([0, 1]);
+    expect(s.snapshots).toHaveLength(1); // no new snapshot
+    expect(s.current).toBe("s1"); // pointer unchanged
+    expect(s.metas).toHaveLength(3); // metadata bumped
+    expect(s.metas.at(-1)).toMatchObject({ schemaId: 1, snapshot: "s1" });
+  });
+
+  it("stamps new files and snapshots with the current schema after evolving", () => {
+    const s = run({ type: "evolveSchema" }, { type: "append" });
+    expect(s.schemaId).toBe(1);
+    // Existing files keep the schema they were written under.
+    expect(s.dataFiles.d1.schemaId).toBe(0);
+    expect(s.dataFiles.d2.schemaId).toBe(0);
+    // Newly appended files (and their snapshot) adopt the evolved schema.
+    expect(s.dataFiles.d3.schemaId).toBe(1);
+    expect(s.snapshots.at(-1)?.schemaId).toBe(1);
+  });
+
+  it("stops at the latest schema without wrapping (field ids never reused)", () => {
+    let s = initialState();
+    for (let i = 0; i < 10; i++) s = reducer(s, { type: "evolveSchema" });
+    expect(s.schemaId).toBe(4); // SCHEMA_DEFS has 5 versions (0..4)
+    expect(s.lastStep.title).toBe("Already at the latest schema");
+  });
+});
+
 describe("time travel", () => {
   it("selectSnap changes the viewed snapshot but not current", () => {
     const s = run({ type: "append" }, { type: "selectSnap", id: "s1" });

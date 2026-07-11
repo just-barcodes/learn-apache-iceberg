@@ -4,6 +4,7 @@ import { ActionButton } from "./toolbar/ActionButton";
 import { AppendControl } from "./toolbar/AppendControl";
 import { PartitionEvolve } from "./toolbar/PartitionEvolve";
 import { QueryPlanner } from "./toolbar/QueryPlanner";
+import { SchemaEvolve } from "./toolbar/SchemaEvolve";
 import { ViewBadge } from "./toolbar/ViewBadge";
 import "./toolbar.css";
 
@@ -45,6 +46,7 @@ export function Toolbar({ state, dispatch }: Props) {
           />
         ) : null}
         {showAdvanced ? <PartitionEvolve state={state} dispatch={dispatch} /> : null}
+        {showAdvanced ? <SchemaEvolve state={state} dispatch={dispatch} /> : null}
         {showAdvanced ? <QueryPlanner state={state} dispatch={dispatch} /> : null}
       </div>
       <div className="toolbar__spacer" />
