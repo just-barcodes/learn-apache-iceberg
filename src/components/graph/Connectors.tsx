@@ -38,6 +38,9 @@ export function Connectors({ state, themeKey, mapRef, innerRef, svgRef }: Props)
 
       const base = inner.getBoundingClientRect();
       const rootStyle = getComputedStyle(document.documentElement);
+      // getBoundingClientRect reports post-zoom (device) pixels, but the SVG is sized
+      // in the pre-zoom layout space, so convert measured coordinates back by the zoom.
+      const zoom = parseFloat(rootStyle.getPropertyValue("--page-zoom")) || 1;
 
       for (const e of computeEdges(state)) {
         const a = map.get(e.from);
@@ -45,10 +48,10 @@ export function Connectors({ state, themeKey, mapRef, innerRef, svgRef }: Props)
         if (!a || !b) continue;
         const ra = a.getBoundingClientRect();
         const rb = b.getBoundingClientRect();
-        const x1 = ra.right - base.left;
-        const y1 = ra.top - base.top + ra.height / 2;
-        const x2 = rb.left - base.left;
-        const y2 = rb.top - base.top + rb.height / 2;
+        const x1 = (ra.right - base.left) / zoom;
+        const y1 = (ra.top - base.top + ra.height / 2) / zoom;
+        const x2 = (rb.left - base.left) / zoom;
+        const y2 = (rb.top - base.top + rb.height / 2) / zoom;
         const dx = Math.max(30, (x2 - x1) * 0.5);
         const color = rootStyle.getPropertyValue(e.colorVar).trim() || "#888";
 
