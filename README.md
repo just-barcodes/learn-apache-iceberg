@@ -6,6 +6,8 @@ evolve the partition spec, and run a query planner, then watch how the metadata
 and data files rewire. Click any node to inspect it; click a snapshot to
 time-travel. Supports light and dark mode.
 
+**Live demo:** https://just-barcodes.github.io/learn-apache-iceberg/
+
 Reimplemented from scratch (React + TypeScript + Vite) from the Claude Design
 project **Apache Iceberg Visualization Tool**.
 
