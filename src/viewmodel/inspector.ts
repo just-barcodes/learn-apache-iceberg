@@ -265,7 +265,7 @@ export function buildInspector(state: TableState): InspectorModel {
           { k: "columns", v: SCHEMA_DEFS[meta.schemaId].fields.length },
           { k: "spec", v: SPEC_DEFS[meta.specId || 0].label },
           { k: "snapshots", v: snaps.length },
-          { k: "current", v: meta.snapshot || "none" },
+          { k: "current", v: meta.snapshot ?? "none" },
         ],
         links: [
           ...(meta.snapshot
@@ -340,11 +340,11 @@ export function buildInspector(state: TableState): InspectorModel {
         links: simple
           ? []
           : [
-              ...s.manifests.map((mid) => {
+              ...s.manifests.map((mid): JumpLink => {
                 const m = state.manifests[mid];
                 return {
                   label: mid + ".avro",
-                  kind: (m && m.kind === "delete" ? "delete" : "manifest") as NodeKind,
+                  kind: m && m.kind === "delete" ? "delete" : "manifest",
                   id: mid,
                 };
               }),

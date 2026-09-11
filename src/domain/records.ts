@@ -42,7 +42,7 @@ export function genRecords(n: number, opts: GenOptions, ctr: OrderIdCounter): Or
     ctr.oid++;
     const id = ctr.oid;
     if (opts.bucket != null && id % 4 !== opts.bucket) continue;
-    const day = opts.day != null ? opts.day : 1 + (id % 27);
+    const day = opts.day ?? 1 + (id % 27);
     out.push({
       order_id: id,
       customer: CUSTOMERS[id % CUSTOMERS.length],

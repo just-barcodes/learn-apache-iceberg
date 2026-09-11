@@ -148,5 +148,5 @@ test("the theme toggle flips light and dark", async ({ page }) => {
   await page.locator(".theme-toggle").click();
   const second = await html.getAttribute("data-theme");
   expect(first).not.toBe(second);
-  expect([first, second].sort()).toEqual(["dark", "light"]);
+  expect(new Set([first, second])).toEqual(new Set(["dark", "light"]));
 });

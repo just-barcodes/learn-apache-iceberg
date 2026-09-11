@@ -55,7 +55,16 @@ export function DeletePicker({ state, dispatch }: Props) {
             key={r.oid}
             className={"picker__row" + (r.checked ? " is-checked" : "")}
             style={{ gridTemplateColumns: template }}
+            role="checkbox"
+            aria-checked={r.checked}
+            tabIndex={0}
             onClick={() => dispatch({ type: "togglePick", oid: r.oid, file: r.file })}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                dispatch({ type: "togglePick", oid: r.oid, file: r.file });
+              }
+            }}
           >
             <span className="picker__box">{r.checked ? "✓" : ""}</span>
             {r.cells.map((cell, i) => (
